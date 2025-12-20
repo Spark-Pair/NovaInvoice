@@ -1,11 +1,10 @@
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Mail, Globe, Briefcase } from 'lucide-react';
+import { Plus, Mail, Globe, Briefcase } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { Modal } from '../components/Modal';
-import { Input } from '../components/Input';
 import { EmptyState } from '../components/EmptyState';
+import { AddBuyerModal } from '../components/buyers/AddBuyerModal';
 import { Buyer } from '../types';
 
 const INITIAL_BUYERS: Buyer[] = [
@@ -17,22 +16,10 @@ const INITIAL_BUYERS: Buyer[] = [
 const Buyers: React.FC = () => {
   const [buyers, setBuyers] = useState<Buyer[]>(INITIAL_BUYERS);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newBuyer, setNewBuyer] = useState<Partial<Buyer>>({ name: '', contactPerson: '', email: '', industry: '' });
 
-  const handleAdd = () => {
-    if (newBuyer.name && newBuyer.email) {
-      const buyer: Buyer = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: newBuyer.name!,
-        contactPerson: newBuyer.contactPerson || 'Unknown',
-        email: newBuyer.email!,
-        industry: newBuyer.industry || 'N/A',
-        totalSpent: 0,
-      };
-      setBuyers([buyer, ...buyers]);
-      setNewBuyer({ name: '', contactPerson: '', email: '', industry: '' });
-      setIsModalOpen(false);
-    }
+  const handleAddBuyer = (buyer: Buyer) => {
+    setBuyers([buyer, ...buyers]);
+    setIsModalOpen(false);
   };
 
   return (
@@ -52,7 +39,7 @@ const Buyers: React.FC = () => {
           <Card key={buyer.id} className="relative group hover:border-indigo-400 dark:hover:border-indigo-600 transition-all p-0 overflow-hidden">
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 transition-colors">
                   {buyer.name.charAt(0)}
                 </div>
                 <div className="text-right">
@@ -61,17 +48,17 @@ const Buyers: React.FC = () => {
                 </div>
               </div>
               
-              <h3 className="text-xl font-bold mb-1">{buyer.name}</h3>
+              <h3 className="text-xl font-bold mb-1 truncate">{buyer.name}</h3>
               <p className="text-slate-500 text-sm mb-6 flex items-center gap-2">
                 <Briefcase size={14} /> {buyer.industry}
               </p>
 
               <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                  <Mail size={16} /> {buyer.email}
+                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 truncate">
+                  <Mail size={16} className="shrink-0" /> {buyer.email}
                 </div>
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                  <Globe size={16} /> {buyer.contactPerson}
+                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 truncate">
+                  <Globe size={16} className="shrink-0" /> {buyer.contactPerson}
                 </div>
               </div>
             </div>
@@ -86,41 +73,11 @@ const Buyers: React.FC = () => {
         {buyers.length === 0 && <div className="col-span-full"><EmptyState message="No buyers found." /></div>}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Register Buyer">
-        <div className="space-y-6">
-          <Input 
-            label="Company Name" 
-            placeholder="e.g. Acme Corp" 
-            value={newBuyer.name}
-            onChange={e => setNewBuyer({...newBuyer, name: e.target.value})}
-          />
-          <Input 
-            label="Primary Contact Name" 
-            placeholder="e.g. John Doe" 
-            value={newBuyer.contactPerson}
-            onChange={e => setNewBuyer({...newBuyer, contactPerson: e.target.value})}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input 
-              label="Contact Email" 
-              type="email" 
-              placeholder="contact@buyer.com" 
-              value={newBuyer.email}
-              onChange={e => setNewBuyer({...newBuyer, email: e.target.value})}
-            />
-            <Input 
-              label="Industry" 
-              placeholder="e.g. Healthcare" 
-              value={newBuyer.industry}
-              onChange={e => setNewBuyer({...newBuyer, industry: e.target.value})}
-            />
-          </div>
-          <div className="flex gap-3 pt-4">
-            <Button variant="secondary" className="flex-1" onClick={() => setIsModalOpen(false)}>Discard</Button>
-            <Button className="flex-1" onClick={handleAdd}>Save Buyer</Button>
-          </div>
-        </div>
-      </Modal>
+      <AddBuyerModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAdd={handleAddBuyer} 
+      />
     </div>
   );
 };

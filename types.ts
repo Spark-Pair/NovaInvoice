@@ -1,9 +1,14 @@
 
 export interface Entity {
   id: string;
-  name: string;
-  taxId: string;
-  email: string;
+  businessName: string;
+  registrationType: 'Registered' | 'Unregistered' | 'Unregistered Distributor' | 'Retail Customer';
+  ntn: string;
+  cnic: string;
+  strn?: string;
+  province: 'BALOCHISTAN' | 'AZAD JAMMU AND KASHMIR' | 'CAPITAL TERRITORY' | 'KHYBER PAKHTUNKHWA' | 'PUNJAB' | 'SINDH' | 'GILGIT BALTISTAN';
+  fullAddress: string;
+  logoUrl?: string;
   status: 'Active' | 'Inactive';
   createdAt: string;
 }

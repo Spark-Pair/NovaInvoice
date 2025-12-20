@@ -26,6 +26,16 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
+
+        /* Subtle Dotted Grid Pattern */
+        .dotted-bg {
+            background-image: radial-gradient(#d3d3d3 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .dark .dotted-bg {
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+        }
+
         /* Custom scrollbar for a modern look */
         ::-webkit-scrollbar {
             width: 8px;
@@ -39,6 +49,13 @@
         }
         .dark ::-webkit-scrollbar-thumb {
             background: #334155;
+        }
+        
+        /* Smooth transitions for theme switching */
+        .transition-colors {
+            transition-property: background-color, border-color, color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
         }
     </style>
 <script type="importmap">
@@ -56,7 +73,7 @@
 }
 </script>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen">
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen dotted-bg">
     <div id="root"></div>
 </body>
 </html>

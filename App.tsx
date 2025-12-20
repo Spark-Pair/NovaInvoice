@@ -41,7 +41,7 @@ export default function App() {
             <Route
               path="*"
               element={
-                <div className="flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+                <div className="flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 dotted-bg">
                   <Sidebar user={user} onLogout={logout} theme={theme} toggleTheme={toggleTheme} />
                   <main className="flex-1 ml-72 min-h-screen">
                     <div className="p-8 pb-20">
