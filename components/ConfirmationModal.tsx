@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, Info, X, AlertCircle } from 'lucide-react';
-import { Button } from '../Button';
+import { Button } from './Button';
 
 export type ConfirmationType = 'danger' | 'warning' | 'info' | 'success';
 
