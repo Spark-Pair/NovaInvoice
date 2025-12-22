@@ -33,6 +33,46 @@ const INITIAL_ENTITIES: Entity[] = [
   { id: '3', businessName: 'Nova Softworks', registrationType: 'Registered', ntn: '4455667-0', cnic: '42301-5555555-3', province: 'CAPITAL TERRITORY', fullAddress: 'Plot 44, Blue Area, Islamabad', status: 'Active', createdAt: '2024-03-01', username: 'nova_hq' },
   { id: '4', businessName: 'Peak Performance', registrationType: 'Unregistered Distributor', ntn: '2233445-5', cnic: '42101-2222222-2', province: 'PUNJAB', fullAddress: 'Main Market, Gulberg, Lahore', status: 'Active', createdAt: '2024-03-12', username: 'peak_dist' },
   { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
+  { id: '5', businessName: 'Crimson Logistics', registrationType: 'Registered', ntn: '7788990-1', cnic: '42401-7777777-7', province: 'BALOCHISTAN', fullAddress: 'Industrial Zone, Quetta', status: 'Active', createdAt: '2023-11-20', username: 'crimson_log' },
 ];
 
 const Entities: React.FC = () => {
@@ -76,7 +116,7 @@ const Entities: React.FC = () => {
     setConfirmationConfig({
       title: `${newStatus === 'Active' ? 'Activate' : 'Deactivate'} Entity`,
       message: `Are you sure you want to set ${entity.businessName} as ${newStatus}?`,
-      type: newStatus === 'Active' ? 'info' : 'warning',
+      type: newStatus === 'Active' ? 'info' : 'danger',
       onConfirm: () => {
         setEntities(entities.map(e => e.id === entity.id ? { ...e, status: newStatus } : e));
         setIsConfirmationOpen(false);
@@ -188,8 +228,8 @@ const Entities: React.FC = () => {
               <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 text-xs font-black uppercase tracking-wider">
                 <th className="px-6 py-5">Entity & Details</th>
                 <th className="px-6 py-5">Identifiers</th>
-                <th className="px-6 py-5">Credentials</th>
                 <th className="px-6 py-5">Type</th>
+                <th className="px-6 py-5">Location</th>
                 <th className="px-6 py-5">Status</th>
                 <th className="px-6 py-5 text-right">Actions</th>
               </tr>
@@ -212,7 +252,7 @@ const Entities: React.FC = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{entity.businessName}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{entity.province}</p>
+                        <p className="text-[10px] font-black text-slate-400 tracking-widest mt-0.5 flex gap-1 items-center"><UserIcon size={12} className="text-slate-400" /> <span>{entity.username}</span></p>
                       </div>
                     </div>
                   </td>
@@ -223,13 +263,16 @@ const Entities: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <div className="flex items-center gap-2">
-                       <UserIcon size={14} className="text-slate-400" />
-                       <span className="text-sm font-mono font-bold text-slate-600 dark:text-slate-400">{entity.username || '—'}</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{entity.registrationType}</span>
+                      {entity.strn && <span className="text-[9px] font-mono text-indigo-500 font-black uppercase tracking-widest">STRN Active</span>}
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{entity.registrationType}</span>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} className="text-indigo-400" />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{entity.province}</span>
+                    </div>
                   </td>
                   <td className="px-6 py-5">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${

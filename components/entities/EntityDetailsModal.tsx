@@ -174,7 +174,7 @@ export const EntityDetailsModal: React.FC<EntityDetailsModalProps> = ({
               icon={<Power size={16} />} 
               className={`text-xs h-10 px-5 rounded-xl border uppercase tracking-widest font-black ${
                 entity.status === 'Active' 
-                  ? 'text-rose-500 border-rose-100 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-900/10' 
+                  ? 'text-rose-500 border-rose-100 hover:bg-rose-50 dark:text-rose-500 dark:border-rose-900/30 dark:hover:bg-rose-900/10' 
                   : 'text-emerald-500 border-emerald-100 hover:bg-emerald-50 dark:border-emerald-900/30 dark:hover:bg-emerald-900/10'
               }`}
               onClick={onToggleStatus}
