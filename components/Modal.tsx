@@ -24,12 +24,12 @@ export const Modal: React.FC<{
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] overflow-y-auto"
         >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-              <X size={20} />
-            </button>
-          </div>
+          {title && (
+            <h2 className="text-2xl font-bold tracking-tight mb-6">{title}</h2>
+          )}
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors absolute top-8 right-8">
+            <X size={20} />
+          </button>
           {children}
         </motion.div>
       </div>

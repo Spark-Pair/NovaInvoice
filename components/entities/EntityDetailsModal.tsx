@@ -6,11 +6,13 @@ import {
   Building2, 
   MapPin, 
   Fingerprint, 
-  ShieldCheck, 
   Calendar, 
-  FileText,
-  Copy,
-  ArrowUpRight
+  ExternalLink,
+  Edit2,
+  Power,
+  Globe,
+  KeyRound,
+  User as UserIcon
 } from 'lucide-react';
 import { Button } from '../Button';
 
@@ -18,116 +20,172 @@ interface EntityDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   entity: Entity | null;
+  onEdit?: () => void;
+  onResetPassword?: () => void;
+  onToggleStatus?: () => void;
 }
 
-export const EntityDetailsModal: React.FC<EntityDetailsModalProps> = ({ isOpen, onClose, entity }) => {
+export const EntityDetailsModal: React.FC<EntityDetailsModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  entity,
+  onEdit,
+  onResetPassword,
+  onToggleStatus
+}) => {
   if (!entity) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Entity Specification">
-      <div className="space-y-8">
-        {/* Profile Header */}
-        <div className="flex flex-col md:flex-row items-center gap-8 pb-8 border-b border-slate-100 dark:border-slate-800">
-          <div className="relative">
-            <div className="w-32 h-32 rounded-[2.5rem] bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center font-black text-5xl text-indigo-600 shadow-2xl border-4 border-white dark:border-slate-800 overflow-hidden shrink-0">
+    <Modal isOpen={isOpen} onClose={onClose} title="">
+      <div className="flex flex-col gap-8">
+        {/* Header Section: Minimalist & Focused */}
+        <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="relative shrink-0">
+            <div className="w-24 h-24 rounded-3xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center font-bold text-4xl text-indigo-600 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
               {entity.logoUrl ? (
-                <img src={entity.logoUrl} className="w-full h-full object-cover" />
+                <img src={entity.logoUrl} alt={entity.businessName} className="w-full h-full object-cover" />
               ) : (
                 entity.businessName.charAt(0)
               )}
             </div>
-            <div className="absolute -bottom-2 -right-2 p-2.5 bg-indigo-600 text-white rounded-2xl shadow-xl border-4 border-white dark:border-slate-900">
-              <ShieldCheck size={20} fill="currentColor" />
-            </div>
+            {entity.status === 'Active' && (
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white dark:border-slate-900 shadow-sm" />
+            )}
           </div>
           
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="text-3xl font-black text-slate-900 dark:text-white leading-tight">
-              {entity.businessName}
-            </h3>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
-              <span className="px-4 py-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+          <div className="flex-1 text-center md:text-left space-y-2">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {entity.businessName}
+              </h3>
+              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                entity.status === 'Active' 
+                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' 
+                  : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'
+              }`}>
                 {entity.status}
               </span>
-              <span className="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700">
-                {entity.registrationType}
-              </span>
             </div>
-            <p className="text-sm text-slate-400 mt-4 flex items-center justify-center md:justify-start gap-2 font-medium">
-              <Calendar size={16} /> Established {entity.createdAt}
-            </p>
+            
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-slate-500 dark:text-slate-400 text-sm font-medium">
+              <div className="flex items-center gap-1.5">
+                <Building2 size={16} className="text-slate-400" />
+                {entity.registrationType}
+              </div>
+              <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700 hidden md:block" />
+              <div className="flex items-center gap-1.5">
+                <Calendar size={16} className="text-slate-400" />
+                {entity.createdAt}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Detailed Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-              <Fingerprint size={16} /> Legal Identifiers
-            </h4>
+        {/* Content Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          {/* Legal Identifiers */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+              <Fingerprint size={14} />
+              Taxation & Account
+            </div>
             
-            <div className="space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-transparent">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">NTN</p>
-                <p className="text-lg font-mono font-bold text-slate-900 dark:text-slate-200">{entity.ntn}</p>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-transparent">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">CNIC</p>
-                <p className="text-lg font-mono font-bold text-slate-900 dark:text-slate-200">{entity.cnic}</p>
-              </div>
-
-              {entity.strn && (
-                <div className="bg-indigo-50/50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100/50 dark:border-indigo-800/50">
-                  <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1">STRN</p>
-                  <p className="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400">{entity.strn}</p>
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl bg-indigo-50/30 dark:bg-indigo-900/10 border border-indigo-100/50 dark:border-indigo-900/20">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Username</p>
+                <div className="flex items-center gap-2">
+                   <UserIcon size={14} className="text-indigo-500" />
+                   <p className="text-sm font-mono font-bold text-indigo-700 dark:text-indigo-400">{entity.username || 'Not Set'}</p>
                 </div>
-              )}
+              </div>
+
+              {[
+                { label: 'NTN', value: entity.ntn },
+                { label: 'CNIC', value: entity.cnic },
+                { label: 'STRN', value: entity.strn || 'Not Provided', highlight: !!entity.strn }
+              ].map((item, i) => (
+                <div key={i} className="group p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</p>
+                    <p className={`text-sm font-mono font-bold ${item.highlight ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                      {item.value}
+                    </p>
+                  </div>
+                  <button className="p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white dark:hover:bg-slate-800 rounded-lg">
+                    <ExternalLink size={14} className="text-slate-400" />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-6">
-            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-              <MapPin size={16} /> Location
-            </h4>
+          {/* Location Details */}
+          <div className="space-y-4 flex flex-col">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+              <MapPin size={14} />
+              Operations Center
+            </div>
             
-            <div className="space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Province</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-slate-200">{entity.province}</p>
+            <div className="space-y-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm grow">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Region</p>
+                <p className="text-base font-bold text-slate-900 dark:text-slate-100">{entity.province}</p>
               </div>
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Operating Address</p>
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed mt-2 italic">
-                  "{entity.fullAddress}"
+              
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mailing Address</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {entity.fullAddress}
                 </p>
               </div>
+
+              <div className="pt-2">
+                <button className="flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-widest">
+                  <Globe size={14} /> View on Map
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Action Footer */}
-        <div className="p-6 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-3xl text-white relative overflow-hidden">
-          <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                <FileText size={24} />
-              </div>
-              <div>
-                <p className="text-indigo-100 text-xs font-black uppercase tracking-wider">Financial Status</p>
-                <p className="text-xl font-black">Compliant Entity</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="ghost" className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-2xl h-12 px-6">
-                Edit Record
-              </Button>
-              <Button className="bg-white text-indigo-600 hover:bg-indigo-50 border-none rounded-2xl h-12 px-6 shadow-xl" icon={<ArrowUpRight size={18} />}>
-                View Reports
-              </Button>
-            </div>
+        <hr className="border-slate-100 dark:border-slate-800" />
+
+        {/* Action Footer: Simplified as requested */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="secondary" 
+              icon={<Edit2 size={16} />} 
+              className="text-xs h-10 px-5 rounded-xl border-slate-200 uppercase tracking-widest"
+              onClick={onEdit}
+            >
+              Edit
+            </Button>
+            <Button 
+              variant="secondary" 
+              icon={<KeyRound size={16} />} 
+              className="text-xs h-10 px-5 rounded-xl border-slate-200 uppercase tracking-widest"
+              onClick={onResetPassword}
+            >
+              Reset Password
+            </Button>
+            <Button 
+              variant="ghost" 
+              icon={<Power size={16} />} 
+              className={`text-xs h-10 px-5 rounded-xl border uppercase tracking-widest font-black ${
+                entity.status === 'Active' 
+                  ? 'text-rose-500 border-rose-100 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-900/10' 
+                  : 'text-emerald-500 border-emerald-100 hover:bg-emerald-50 dark:border-emerald-900/30 dark:hover:bg-emerald-900/10'
+              }`}
+              onClick={onToggleStatus}
+            >
+              {entity.status === 'Active' ? 'Inactive' : 'Active'}
+            </Button>
           </div>
+          
+          <Button variant="secondary" className="w-full sm:w-auto h-11 px-8 rounded-xl font-black text-xs uppercase tracking-widest bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-none shadow-lg" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </div>
     </Modal>

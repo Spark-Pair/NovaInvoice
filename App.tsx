@@ -1,6 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+// Import DOM-specific router components from react-router-dom
+import { HashRouter } from 'react-router-dom';
+// Import core routing components from react-router to resolve potential export missing errors in some environments
+import { Routes, Route, Navigate } from 'react-router';
 import { Theme } from './types';
 import { useAuth } from './hooks/useAuth';
 import { Sidebar } from './components/Sidebar';
@@ -41,10 +44,10 @@ export default function App() {
             <Route
               path="*"
               element={
-                <div className="flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 dotted-bg">
+                <div className="flex bg-slate-50 dark:bg-[#080C1C] text-slate-900 dark:text-slate-100 transition-colors duration-300 dotted-bg">
                   <Sidebar user={user} onLogout={logout} theme={theme} toggleTheme={toggleTheme} />
                   <main className="flex-1 ml-72 min-h-screen">
-                    <div className="p-8 pb-20">
+                    <div className={`p-8 pb-5 h-screen`}>
                       <Routes>
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/entities" element={<Entities />} />

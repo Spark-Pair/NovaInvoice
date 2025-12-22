@@ -1,16 +1,17 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
 import { Select } from '../Select';
 import { Entity } from '../../types';
-import { Upload, X, User as UserIcon, Lock } from 'lucide-react';
+import { Upload, X, ShieldAlert } from 'lucide-react';
 
-interface AddEntityModalProps {
+interface EditEntityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (entity: Entity) => void;
+  onUpdate: (entity: Entity) => void;
+  entity: Entity | null;
 }
 
 const REGISTRATION_TYPES = [
@@ -30,21 +31,17 @@ const PROVINCES = [
   'GILGIT BALTISTAN'
 ];
 
-export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose, onAdd }) => {
+export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClose, onUpdate, entity }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Entity>>({
-    businessName: '',
-    registrationType: 'Registered',
-    ntn: '',
-    cnic: '',
-    strn: '',
-    province: 'PUNJAB',
-    fullAddress: '',
-    status: 'Active',
-    username: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState<Partial<Entity>>({});
+
+  useEffect(() => {
+    if (entity) {
+      setFormData({ ...entity });
+      setLogoPreview(entity.logoUrl || null);
+    }
+  }, [entity, isOpen]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,62 +54,40 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
     }
   };
 
-  const handleAdd = () => {
-    if (
-      formData.businessName && 
-      formData.registrationType && 
-      formData.ntn && 
-      formData.cnic && 
-      formData.province && 
-      formData.fullAddress &&
-      formData.username &&
-      formData.password
-    ) {
-      const entity: Entity = {
-        id: Math.random().toString(36).substr(2, 9),
-        businessName: formData.businessName!,
-        registrationType: formData.registrationType as any,
-        ntn: formData.ntn!,
-        cnic: formData.cnic!,
-        strn: formData.strn,
-        province: formData.province as any,
-        fullAddress: formData.fullAddress!,
-        logoUrl: logoPreview || undefined,
-        status: 'Active',
-        createdAt: new Date().toISOString().split('T')[0],
-        username: formData.username,
-        password: formData.password
-      };
-      onAdd(entity);
-      setFormData({
-        businessName: '',
-        registrationType: 'Registered',
-        ntn: '',
-        cnic: '',
-        strn: '',
-        province: 'PUNJAB',
-        fullAddress: '',
-        username: '',
-        password: ''
-      });
-      setLogoPreview(null);
+  const handleUpdate = () => {
+    if (entity && formData.businessName && formData.ntn && formData.cnic && formData.fullAddress) {
+      onUpdate({
+        ...entity,
+        ...formData,
+        logoUrl: logoPreview || undefined
+      } as Entity);
     }
   };
 
+  if (!entity) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create New Business Entity">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Edit ${entity.businessName}`}>
       <div className="grid gap-6">
         <div className="scrollable grid gap-6 h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+          
+          {/* Logo Update Section */}
           <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] bg-slate-50/50 dark:bg-slate-900/50 transition-all hover:bg-slate-100 dark:hover:bg-slate-800">
             {logoPreview ? (
               <div className="relative group">
-                <img src={logoPreview} alt="Logo preview" className="w-24 h-24 object-contain rounded-xl border border-white shadow-md bg-white" />
+                <img src={logoPreview} alt="Logo preview" className="w-32 h-32 object-contain rounded-2xl border border-white dark:border-slate-700 shadow-md bg-white dark:bg-slate-800" />
                 <button 
                   onClick={() => setLogoPreview(null)}
-                  className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-3 -right-3 p-1.5 bg-rose-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <X size={14} />
+                  <X size={16} />
                 </button>
+                <div 
+                  className="absolute inset-0 bg-slate-900/40 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload size={24} className="text-white" />
+                </div>
               </div>
             ) : (
               <div 
@@ -122,7 +97,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <Upload size={24} />
                 </div>
-                <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Upload Company Logo</p>
+                <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Update Profile Logo</p>
                 <p className="text-xs text-slate-400 mt-1">PNG, JPG up to 2MB</p>
               </div>
             )}
@@ -137,33 +112,10 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="md:col-span-2">
-               <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/20 mb-2">
-                 <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4">Credentials Information</p>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input 
-                      label="Username *" 
-                      placeholder="admin_entity" 
-                      value={formData.username}
-                      onChange={e => setFormData({...formData, username: e.target.value})}
-                      icon={<UserIcon size={16} className="text-slate-400" />}
-                    />
-                    <Input 
-                      label="Password *" 
-                      type="password"
-                      placeholder="••••••••" 
-                      value={formData.password}
-                      onChange={e => setFormData({...formData, password: e.target.value})}
-                      icon={<Lock size={16} className="text-slate-400" />}
-                    />
-                 </div>
-               </div>
-            </div>
-
-            <div className="md:col-span-2">
               <Input 
                 label="Business Name *" 
                 placeholder="Enter legally registered name" 
-                value={formData.businessName}
+                value={formData.businessName || ''}
                 onChange={e => setFormData({...formData, businessName: e.target.value})}
               />
             </div>
@@ -187,14 +139,14 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
             <Input 
               label="NTN (National Tax Number) *" 
               placeholder="0000000-0" 
-              value={formData.ntn}
+              value={formData.ntn || ''}
               onChange={e => setFormData({...formData, ntn: e.target.value})}
             />
             
             <Input 
               label="CNIC *" 
               placeholder="00000-0000000-0" 
-              value={formData.cnic}
+              value={formData.cnic || ''}
               onChange={e => setFormData({...formData, cnic: e.target.value})}
             />
 
@@ -202,7 +154,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
               <Input 
                 label="STRN (Sales Tax Registration Number)" 
                 placeholder="00-00-0000-000-00" 
-                value={formData.strn}
+                value={formData.strn || ''}
                 onChange={e => setFormData({...formData, strn: e.target.value})}
               />
             </div>
@@ -214,7 +166,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
                   rows={3}
                   placeholder="Shop/Office number, Street, Area, City"
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                  value={formData.fullAddress}
+                  value={formData.fullAddress || ''}
                   onChange={e => setFormData({...formData, fullAddress: e.target.value})}
                 />
               </div>
@@ -223,13 +175,13 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
         </div>
 
         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Button variant="secondary" className="flex-1 rounded-2xl" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" className="flex-1 rounded-2xl" onClick={onClose}>Discard Changes</Button>
           <Button 
             className="flex-1 rounded-2xl shadow-lg shadow-indigo-500/20" 
-            onClick={handleAdd}
-            disabled={!formData.businessName || !formData.ntn || !formData.cnic || !formData.fullAddress || !formData.username || !formData.password}
+            onClick={handleUpdate}
+            disabled={!formData.businessName || !formData.ntn || !formData.cnic || !formData.fullAddress}
           >
-            Create Entity
+            Save Profile
           </Button>
         </div>
       </div>

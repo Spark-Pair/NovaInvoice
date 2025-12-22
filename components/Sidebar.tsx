@@ -1,5 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+// Link is DOM-specific, so it stays in react-router-dom
+import { Link } from 'react-router-dom';
+// useLocation is core logic, so we import from react-router to ensure compatibility
+import { useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -48,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, theme, toggleT
 
   return (
     <aside className="w-80 h-screen fixed left-0 top-0 p-5">
-      <div className="h-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col p-6 z-40 transition-colors duration-300 rounded-3xl">
+      <div className="h-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col p-6 z-40 transition-colors duration-300 rounded-3xl">
         <div className="flex items-center gap-3 px-2">
           <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-indigo-100 dark:shadow-none">
             <Zap size={20} fill="currentColor" />

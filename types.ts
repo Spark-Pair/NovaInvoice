@@ -11,6 +11,8 @@ export interface Entity {
   logoUrl?: string;
   status: 'Active' | 'Inactive';
   createdAt: string;
+  username?: string;
+  password?: string;
 }
 
 export interface Buyer {

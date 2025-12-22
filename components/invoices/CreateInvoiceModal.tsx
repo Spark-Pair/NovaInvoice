@@ -77,7 +77,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
             ))}
           </div>
           
-          <div className="flex gap-2 items-end bg-slate-100 dark:bg-slate-950 p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
+          <div className="flex gap-2 items-end bg-slate-100 dark:bg-[#080C1C] p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
             <div className="flex-1 space-y-1">
               <Input 
                 className="bg-transparent border-none focus:ring-0 px-0" 

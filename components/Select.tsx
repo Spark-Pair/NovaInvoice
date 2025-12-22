@@ -74,7 +74,7 @@ export const Select: React.FC<SelectProps> = ({
                   autoFocus
                   type="text" 
                   placeholder="Search..." 
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border-none rounded-lg text-sm focus:ring-0 outline-none"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-[#080C1C] border-none rounded-lg text-sm focus:ring-0 outline-none"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onClick={(e) => e.stopPropagation()}
