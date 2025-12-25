@@ -25,6 +25,7 @@ import { EditEntityModal } from '../components/entities/EditEntityModal';
 import { ResetPasswordModal } from '../components/entities/ResetPasswordModal';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { EntityDetailsModal } from '../components/entities/EntityDetailsModal';
+import { EntityFilterModal } from '../components/entities/EntityFilterModal';
 import { Entity } from '../types';
 
 const INITIAL_ENTITIES: Entity[] = [
@@ -40,19 +41,39 @@ const Entities: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState<{ title: string; message: string; onConfirm: () => void; type: 'danger' | 'warning' | 'info' }>({ title: '', message: '', onConfirm: () => {}, type: 'info' });
 
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [activeContextMenu, setActiveContextMenu] = useState<string | null>(null);
   
+  const [filters, setFilters] = useState<any>({});
+  const [appliedFilters, setAppliedFilters] = useState<any>({});
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const itemsPerPage = 50;
-  const totalPages = Math.max(1, Math.ceil(entities.length / itemsPerPage));
-  
+
+  // Filter Logic
+  const filteredEntities = entities.filter(entity => {
+    const f = appliedFilters;
+    if (f.username && !entity.username?.toLowerCase().includes(f.username.toLowerCase())) return false;
+    if (f.businessName && !entity.businessName.toLowerCase().includes(f.businessName.toLowerCase())) return false;
+    if (f.registrationType && entity.registrationType !== f.registrationType) return false;
+    if (f.province && entity.province !== f.province) return false;
+    if (f.status && entity.status !== f.status) return false;
+    if (f.ntn && !entity.ntn.includes(f.ntn)) return false;
+    if (f.cnic && !entity.cnic.includes(f.cnic)) return false;
+    if (f.strn && (!entity.strn || !entity.strn.includes(f.strn))) return false;
+    if (f.dateFrom && entity.createdAt < f.dateFrom) return false;
+    if (f.dateTo && entity.createdAt > f.dateTo) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredEntities.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEntities = entities.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedEntities = filteredEntities.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePageChange = (newPage: number) => {
     const page = Math.min(Math.max(1, newPage), totalPages);
@@ -76,7 +97,7 @@ const Entities: React.FC = () => {
     setConfirmationConfig({
       title: `${newStatus === 'Active' ? 'Activate' : 'Deactivate'} Entity`,
       message: `Are you sure you want to set ${entity.businessName} as ${newStatus}?`,
-      type: newStatus === 'Active' ? 'info' : 'warning',
+      type: newStatus === 'Active' ? 'info' : 'danger',
       onConfirm: () => {
         setEntities(entities.map(e => e.id === entity.id ? { ...e, status: newStatus } : e));
         setIsConfirmationOpen(false);
@@ -95,6 +116,20 @@ const Entities: React.FC = () => {
     });
   };
 
+  const handleApplyFilters = () => {
+    setAppliedFilters({ ...filters });
+    setCurrentPage(1);
+    setPageInput('1');
+    setIsFilterModalOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+    setAppliedFilters({});
+    setCurrentPage(1);
+    setPageInput('1');
+  };
+
   useEffect(() => {
     const handleClickOutside = () => setActiveContextMenu(null);
     window.addEventListener('click', handleClickOutside);
@@ -105,10 +140,10 @@ const Entities: React.FC = () => {
     <div className="max-w-7xl mx-auto flex flex-col gap-8 h-full">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Business Entities</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Business Entities</h1>
           <p className="text-slate-500">Manage legal profiles for your business units and distribution points.</p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-indigo-100">
+        <Button onClick={() => setIsAddModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-indigo-100 h-12">
           Add Entity
         </Button>
       </div>
@@ -177,8 +212,15 @@ const Entities: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-4">
-            <Button variant="secondary" icon={<Filter size={16} />} className="rounded-xl">Filters</Button>
-            <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl">Export</Button>
+            <Button 
+              variant={Object.keys(appliedFilters).length > 0 ? "primary" : "secondary"} 
+              icon={<Filter size={16} />} 
+              className={`rounded-xl h-11 transition-all ${Object.keys(appliedFilters).length > 0 ? 'ring-4 ring-indigo-500/10' : ''}`}
+              onClick={() => setIsFilterModalOpen(true)}
+            >
+              Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
+            </Button>
+            <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
           </div>
         </div>
 
@@ -188,8 +230,8 @@ const Entities: React.FC = () => {
               <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 text-xs font-black uppercase tracking-wider">
                 <th className="px-6 py-5">Entity & Details</th>
                 <th className="px-6 py-5">Identifiers</th>
-                <th className="px-6 py-5">Credentials</th>
                 <th className="px-6 py-5">Type</th>
+                <th className="px-6 py-5">Location</th>
                 <th className="px-6 py-5">Status</th>
                 <th className="px-6 py-5 text-right">Actions</th>
               </tr>
@@ -212,7 +254,7 @@ const Entities: React.FC = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{entity.businessName}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{entity.province}</p>
+                        <p className="text-[10px] font-black text-slate-400 tracking-widest mt-0.5 flex gap-1 items-center"><UserIcon size={12} className="text-slate-400" /> <span>{entity.username}</span></p>
                       </div>
                     </div>
                   </td>
@@ -223,13 +265,16 @@ const Entities: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <div className="flex items-center gap-2">
-                       <UserIcon size={14} className="text-slate-400" />
-                       <span className="text-sm font-mono font-bold text-slate-600 dark:text-slate-400">{entity.username || '—'}</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{entity.registrationType}</span>
+                      {entity.strn && <span className="text-[9px] font-mono text-indigo-500 font-black uppercase tracking-widest">STRN Active</span>}
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{entity.registrationType}</span>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} className="text-indigo-400" />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{entity.province}</span>
+                    </div>
                   </td>
                   <td className="px-6 py-5">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
@@ -284,7 +329,12 @@ const Entities: React.FC = () => {
               ))}
             </tbody>
           </table>
-          {entities.length === 0 && <EmptyState message="No business entities configured yet." />}
+          {filteredEntities.length === 0 && (
+            <div className="py-20 flex flex-col items-center">
+              <EmptyState message="No business entities matching your criteria." />
+              <Button variant="ghost" onClick={handleClearFilters} className="mt-2 text-xs font-bold uppercase tracking-widest">Reset All Filters</Button>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -308,13 +358,22 @@ const Entities: React.FC = () => {
         entityName={selectedEntity?.businessName || ''}
       />
 
+      <EntityFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+      />
+
       <ConfirmationModal
         isOpen={isConfirmationOpen}
         onClose={() => setIsConfirmationOpen(false)}
         onConfirm={confirmationConfig.onConfirm}
         title={confirmationConfig.title}
         message={confirmationConfig.message}
-        type={confirmationConfig.type}
+        type={confirmationConfig.type as any}
       />
 
       <EntityDetailsModal

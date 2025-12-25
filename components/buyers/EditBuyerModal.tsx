@@ -1,15 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
 import { Select } from '../Select';
 import { Buyer } from '../../types';
 
-interface AddBuyerModalProps {
+interface EditBuyerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (buyer: Buyer) => void;
+  onUpdate: (buyer: Buyer) => void;
+  buyer: Buyer | null;
 }
 
 const REGISTRATION_TYPES = [
@@ -29,54 +30,28 @@ const PROVINCES = [
   'GILGIT BALTISTAN'
 ];
 
-export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, onAdd }) => {
-  const [formData, setFormData] = useState<Partial<Buyer>>({
-    name: '',
-    registrationType: 'Registered',
-    ntn: '',
-    cnic: '',
-    strn: '',
-    province: 'PUNJAB',
-    address: '',
-    status: 'Active'
-  });
+export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose, onUpdate, buyer }) => {
+  const [formData, setFormData] = useState<Partial<Buyer>>({});
 
-  const handleAdd = () => {
-    if (
-      formData.name && 
-      formData.registrationType && 
-      formData.ntn && 
-      formData.cnic && 
-      formData.province && 
-      formData.address
-    ) {
-      const buyer: Buyer = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: formData.name!,
-        registrationType: formData.registrationType as any,
-        ntn: formData.ntn!,
-        cnic: formData.cnic!,
-        strn: formData.strn,
-        province: formData.province as any,
-        address: formData.address!,
-        status: 'Active',
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      onAdd(buyer);
-      setFormData({
-        name: '',
-        registrationType: 'Registered',
-        ntn: '',
-        cnic: '',
-        strn: '',
-        province: 'PUNJAB',
-        address: ''
-      });
+  useEffect(() => {
+    if (buyer) {
+      setFormData({ ...buyer });
+    }
+  }, [buyer, isOpen]);
+
+  const handleUpdate = () => {
+    if (buyer && formData.name && formData.ntn && formData.cnic && formData.address) {
+      onUpdate({
+        ...buyer,
+        ...formData,
+      } as Buyer);
     }
   };
 
+  if (!buyer) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Register New Buyer">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Edit Buyer Profile`}>
       <div className="grid gap-6">
         <div className="scrollable grid gap-6 h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -84,7 +59,7 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
               <Input 
                 label="Buyer Name *" 
                 placeholder="Enter buyer's legal name" 
-                value={formData.name}
+                value={formData.name || ''}
                 onChange={e => setFormData({...formData, name: e.target.value})}
               />
             </div>
@@ -108,14 +83,14 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
             <Input 
               label="NTN *" 
               placeholder="0000000-0" 
-              value={formData.ntn}
+              value={formData.ntn || ''}
               onChange={e => setFormData({...formData, ntn: e.target.value})}
             />
             
             <Input 
               label="CNIC *" 
               placeholder="00000-0000000-0" 
-              value={formData.cnic}
+              value={formData.cnic || ''}
               onChange={e => setFormData({...formData, cnic: e.target.value})}
             />
 
@@ -123,7 +98,7 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
               <Input 
                 label="STRN" 
                 placeholder="00-00-0000-000-00" 
-                value={formData.strn}
+                value={formData.strn || ''}
                 onChange={e => setFormData({...formData, strn: e.target.value})}
               />
             </div>
@@ -135,7 +110,7 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
                   rows={3}
                   placeholder="Street, Area, City"
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                  value={formData.address}
+                  value={formData.address || ''}
                   onChange={e => setFormData({...formData, address: e.target.value})}
                 />
               </div>
@@ -144,13 +119,13 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
         </div>
 
         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Button variant="secondary" className="flex-1 rounded-2xl" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" className="flex-1 rounded-2xl" onClick={onClose}>Discard</Button>
           <Button 
             className="flex-1 rounded-2xl shadow-lg shadow-indigo-500/20" 
-            onClick={handleAdd}
+            onClick={handleUpdate}
             disabled={!formData.name || !formData.ntn || !formData.cnic || !formData.address}
           >
-            Save Buyer
+            Update Buyer
           </Button>
         </div>
       </div>
