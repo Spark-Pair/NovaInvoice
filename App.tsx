@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import Entities from './pages/Entities';
 import Buyers from './pages/Buyers';
 import Invoices from './pages/Invoices';
+import Settings from './pages/Settings';
 
 export default function App() {
   const { user, login, logout } = useAuth();
@@ -53,6 +54,7 @@ export default function App() {
                         <Route path="/entities" element={<Entities />} />
                         <Route path="/buyers" element={<Buyers />} />
                         <Route path="/invoices" element={<Invoices />} />
+                        <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<Navigate to="/dashboard" />} />
                       </Routes>
                     </div>

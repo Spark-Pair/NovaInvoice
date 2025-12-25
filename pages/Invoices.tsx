@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
@@ -87,6 +87,11 @@ const Invoices: React.FC = () => {
   const [pageInput, setPageInput] = useState('1');
   const itemsPerPage = 50;
 
+  const currencySymbol = useMemo(() => {
+    const setting = localStorage.getItem('app_currency') || 'Dollar ($)';
+    return setting.includes('Rs') ? 'Rs.' : '$';
+  }, []);
+
   const filteredInvoices = invoices.filter(inv => {
     const f = appliedFilters;
     const buyer = buyers.find(b => b.id === inv.buyerId);
@@ -151,7 +156,7 @@ const Invoices: React.FC = () => {
   const nextInvoiceNumber = `INV-${new Date().getFullYear()}-${String(invoices.length + 1).padStart(3, '0')}`;
 
   return (
-    <div>
+    <>
       <div className="space-y-8 max-w-7xl mx-auto flex flex-col h-full">
         <div className="flex justify-between items-end">
           <div>
@@ -179,7 +184,7 @@ const Invoices: React.FC = () => {
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Paid Volume</p>
-              <h3 className="text-4xl font-black mt-1">${invoices.filter(i => i.status === 'Paid').reduce((acc, curr) => acc + curr.total, 0).toLocaleString()}</h3>
+              <h3 className="text-4xl font-black mt-1">{currencySymbol}{invoices.filter(i => i.status === 'Paid').reduce((acc, curr) => acc + curr.total, 0).toLocaleString()}</h3>
             </div>
           </Card>
           <Card className="flex items-center gap-6 relative overflow-hidden">
@@ -188,7 +193,7 @@ const Invoices: React.FC = () => {
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Outstanding</p>
-              <h3 className="text-4xl font-black mt-1 text-rose-600">${invoices.filter(i => i.status !== 'Paid').reduce((acc, curr) => acc + curr.total, 0).toLocaleString()}</h3>
+              <h3 className="text-4xl font-black mt-1 text-rose-600">{currencySymbol}{invoices.filter(i => i.status !== 'Paid').reduce((acc, curr) => acc + curr.total, 0).toLocaleString()}</h3>
             </div>
           </Card>
         </div>
@@ -283,7 +288,7 @@ const Invoices: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-5">
-                        <p className="font-black text-slate-900 dark:text-white">${inv.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        <p className="font-black text-slate-900 dark:text-white">{currencySymbol}{inv.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
@@ -396,7 +401,7 @@ const Invoices: React.FC = () => {
           onClose={() => setSelectedInvoiceForPreview(null)}
         />
       )}
-    </div>
+    </>
   );
 };
 

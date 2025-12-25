@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Download, 
@@ -28,6 +28,16 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice, entity,
   const subtotal = invoice.items.reduce((acc, curr) => acc + curr.salesValueExclTax, 0);
   const totalTax = invoice.items.reduce((acc, curr) => acc + curr.salesTax + curr.extraTax + curr.furtherTax + curr.fedPayable, 0);
   const totalDiscount = invoice.items.reduce((acc, curr) => acc + curr.discount + curr.otherDiscount + curr.tradeDiscount, 0);
+  
+  const currencySymbol = useMemo(() => {
+    const setting = localStorage.getItem('app_currency') || 'Dollar ($)';
+    return setting.includes('Rs') ? 'Rs.' : '$';
+  }, []);
+
+  const currencyLabel = useMemo(() => {
+    const setting = localStorage.getItem('app_currency') || 'Dollar ($)';
+    return setting.includes('Rs') ? 'PKR' : 'USD';
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[120] bg-slate-100 dark:bg-[#04060b] flex flex-col">
@@ -201,7 +211,7 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice, entity,
               <div className="px-6 py-4 rounded-3xl bg-indigo-600 text-white flex justify-between items-center shadow-xl shadow-indigo-500/20">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Grand Total</p>
-                  <p className="text-3xl font-black tracking-tighter">USD ${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <p className="text-3xl font-black tracking-tighter">{currencySymbol}{invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                 </div>
                 <CreditCard size={32} className="opacity-20" />
               </div>
