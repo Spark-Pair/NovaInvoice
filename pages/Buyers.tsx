@@ -1,82 +1,350 @@
 
-import React, { useState } from 'react';
-import { Plus, Mail, Globe, Briefcase } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Plus,
+  MoreVertical, 
+  Filter, 
+  Download, 
+  Users, 
+  MapPin, 
+  Tag, 
+  ChevronLeft, 
+  ChevronRight,
+  Edit2,
+  Eye,
+  Power
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { AddBuyerModal } from '../components/buyers/AddBuyerModal';
+import { EditBuyerModal } from '../components/buyers/EditBuyerModal';
+import { BuyerDetailsModal } from '../components/buyers/BuyerDetailsModal';
+import { BuyerFilterModal } from '../components/buyers/BuyerFilterModal';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Buyer } from '../types';
 
 const INITIAL_BUYERS: Buyer[] = [
-  { id: '1', name: 'Global Tech Corp', contactPerson: 'Sarah Wilson', email: 'sarah@globaltech.com', industry: 'Software', totalSpent: 45000 },
-  { id: '2', name: 'Greenway Retail', contactPerson: 'Michael Brown', email: 'm.brown@greenway.com', industry: 'Retail', totalSpent: 12500 },
-  { id: '3', name: 'Skyline Architects', contactPerson: 'Emma Davis', email: 'emma@skyline.build', industry: 'Design', totalSpent: 67000 },
+  { id: '1', name: 'Global Tech Corp', registrationType: 'Registered', ntn: '8877665-4', cnic: '42101-5555555-1', strn: '12-00-1122-334-55', province: 'PUNJAB', address: 'Plot 12, Industrial Area, Lahore', status: 'Active', createdAt: '2024-01-20' },
+  { id: '2', name: 'Greenway Retail', registrationType: 'Unregistered', ntn: '1122334-5', cnic: '42201-4444444-2', province: 'SINDH', address: 'Shop 4, Market Square, Karachi', status: 'Active', createdAt: '2024-02-15' },
+  { id: '3', name: 'Skyline Architects', registrationType: 'Registered', ntn: '5544332-1', cnic: '42301-3333333-3', province: 'CAPITAL TERRITORY', address: 'Blue Area, Islamabad', status: 'Inactive', createdAt: '2023-12-10' },
 ];
 
 const Buyers: React.FC = () => {
   const [buyers, setBuyers] = useState<Buyer[]>(INITIAL_BUYERS);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState<{ title: string; message: string; onConfirm: () => void; type: 'danger' | 'warning' | 'info' }>({ title: '', message: '', onConfirm: () => {}, type: 'info' });
+
+  const [selectedBuyer, setSelectedBuyer] = useState<Buyer | null>(null);
+  const [activeContextMenu, setActiveContextMenu] = useState<string | null>(null);
+  
+  const [filters, setFilters] = useState<any>({});
+  const [appliedFilters, setAppliedFilters] = useState<any>({});
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
+  const itemsPerPage = 50;
+
+  const filteredBuyers = buyers.filter(buyer => {
+    const f = appliedFilters;
+    if (f.name && !buyer.name.toLowerCase().includes(f.name.toLowerCase())) return false;
+    if (f.registrationType && buyer.registrationType !== f.registrationType) return false;
+    if (f.province && buyer.province !== f.province) return false;
+    if (f.status && buyer.status !== f.status) return false;
+    if (f.ntn && !buyer.ntn.includes(f.ntn)) return false;
+    if (f.cnic && !buyer.cnic.includes(f.cnic)) return false;
+    if (f.dateFrom && buyer.createdAt < f.dateFrom) return false;
+    if (f.dateTo && buyer.createdAt > f.dateTo) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredBuyers.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedBuyers = filteredBuyers.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    const page = Math.min(Math.max(1, newPage), totalPages);
+    setCurrentPage(page);
+    setPageInput(page.toString());
+  };
 
   const handleAddBuyer = (buyer: Buyer) => {
     setBuyers([buyer, ...buyers]);
-    setIsModalOpen(false);
+    setIsAddModalOpen(false);
   };
 
+  const handleUpdateBuyer = (updatedBuyer: Buyer) => {
+    setBuyers(buyers.map(b => b.id === updatedBuyer.id ? updatedBuyer : b));
+    setIsEditModalOpen(false);
+    setSelectedBuyer(null);
+  };
+
+  const toggleStatus = (buyer: Buyer) => {
+    const newStatus = buyer.status === 'Active' ? 'Inactive' : 'Active';
+    setConfirmationConfig({
+      title: `${newStatus === 'Active' ? 'Activate' : 'Deactivate'} Buyer`,
+      message: `Are you sure you want to set ${buyer.name} as ${newStatus}?`,
+      type: newStatus === 'Active' ? 'info' : 'danger',
+      onConfirm: () => {
+        setBuyers(buyers.map(b => b.id === buyer.id ? { ...b, status: newStatus } : b));
+        setIsConfirmationOpen(false);
+      }
+    });
+    setIsConfirmationOpen(true);
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedFilters({ ...filters });
+    setCurrentPage(1);
+    setPageInput('1');
+    setIsFilterModalOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+    setAppliedFilters({});
+    setCurrentPage(1);
+    setPageInput('1');
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => setActiveContextMenu(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto flex flex-col gap-8 h-full">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Buyers Directory</h1>
-          <p className="text-slate-500">View and manage your clients and customer relationships.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Buyers Directory</h1>
+          <p className="text-slate-500">Manage your client relationships and billing profiles.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} icon={<Plus size={20} />}>
+        <Button onClick={() => setIsAddModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-indigo-100 h-12">
           New Buyer
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {buyers.map(buyer => (
-          <Card key={buyer.id} className="relative group hover:border-indigo-400 dark:hover:border-indigo-600 transition-all p-0 overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 transition-colors">
-                  {buyer.name.charAt(0)}
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Lifetime Value</p>
-                  <p className="text-lg font-bold text-indigo-600">${buyer.totalSpent.toLocaleString()}</p>
-                </div>
-              </div>
-              
-              <h3 className="text-xl font-bold mb-1 truncate">{buyer.name}</h3>
-              <p className="text-slate-500 text-sm mb-6 flex items-center gap-2">
-                <Briefcase size={14} /> {buyer.industry}
-              </p>
-
-              <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 truncate">
-                  <Mail size={16} className="shrink-0" /> {buyer.email}
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 truncate">
-                  <Globe size={16} className="shrink-0" /> {buyer.contactPerson}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex border-t border-slate-100 dark:border-slate-800">
-              <button className="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Edit Profile</button>
-              <div className="w-[1px] bg-slate-100 dark:bg-slate-800"></div>
-              <button className="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">View Invoices</button>
-            </div>
-          </Card>
-        ))}
-        {buyers.length === 0 && <div className="col-span-full"><EmptyState message="No buyers found." /></div>}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="flex items-center gap-6 relative overflow-hidden">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
+            <Users size={32} />
+          </div>
+          <div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Total Buyers</p>
+            <h3 className="text-4xl font-black mt-1">{buyers.length}</h3>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-6 relative overflow-hidden">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
+            <Tag size={32} />
+          </div>
+          <div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Registered</p>
+            <h3 className="text-4xl font-black mt-1">{buyers.filter(b => b.registrationType === 'Registered').length}</h3>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-6 relative overflow-hidden">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
+            <MapPin size={32} />
+          </div>
+          <div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Regions</p>
+            <h3 className="text-4xl font-black mt-1">{new Set(buyers.map(b => b.province)).size}</h3>
+          </div>
+        </Card>
       </div>
 
+      <Card className="overflow-hidden p-0 grow flex flex-col shadow-xl">
+        <div className="flex flex-wrap items-center justify-between p-5 gap-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#080C1C] p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+              <button 
+                onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage - 1); }}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <div className="flex items-center gap-2 px-2">
+                <span className="text-sm font-bold text-slate-400">Page</span>
+                <input 
+                  type="text"
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  onBlur={() => handlePageChange(parseInt(pageInput))}
+                  onKeyDown={(e) => e.key === 'Enter' && handlePageChange(parseInt(pageInput))}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-12 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-black focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+                <span className="text-sm font-bold text-slate-400">of {totalPages}</span>
+              </div>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage + 1); }}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <Button 
+              variant={Object.keys(appliedFilters).length > 0 ? "primary" : "secondary"} 
+              icon={<Filter size={16} />} 
+              className={`rounded-xl h-11 transition-all ${Object.keys(appliedFilters).length > 0 ? 'ring-4 ring-indigo-500/10' : ''}`}
+              onClick={() => setIsFilterModalOpen(true)}
+            >
+              Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
+            </Button>
+            <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto overflow-y-auto relative grow custom-scrollbar">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 z-20 bg-slate-50/90 dark:bg-[#080C1C] backdrop-blur-md">
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 text-xs font-black uppercase tracking-wider">
+                <th className="px-6 py-5">Buyer Name</th>
+                <th className="px-6 py-5">Identifiers</th>
+                <th className="px-6 py-5">Type</th>
+                <th className="px-6 py-5">Location</th>
+                <th className="px-6 py-5">Status</th>
+                <th className="px-6 py-5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+              {paginatedBuyers.map(buyer => (
+                <tr 
+                  key={buyer.id} 
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer"
+                  onClick={() => setSelectedBuyer(buyer)}
+                >
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden border border-white dark:border-slate-800 shadow-sm">
+                        {buyer.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{buyer.name}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">NTN: <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold tracking-normal">{buyer.ntn}</span></p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CNIC: <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold tracking-normal">{buyer.cnic}</span></p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{buyer.registrationType}</span>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} className="text-indigo-400" />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{buyer.province}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                      buyer.status === 'Active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                    }`}>
+                      {buyer.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 text-right relative overflow-visible">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveContextMenu(activeContextMenu === buyer.id ? null : buyer.id);
+                      }}
+                      className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all text-slate-400 hover:text-indigo-600 shadow-sm border border-transparent hover:border-slate-100"
+                    >
+                      <MoreVertical size={18} />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {activeContextMenu === buyer.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                          className="absolute right-6 top-14 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 py-2 overflow-hidden text-left"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button onClick={() => {setSelectedBuyer(buyer); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                            <Eye size={14} /> View Profile
+                          </button>
+                          <button onClick={() => {setSelectedBuyer(buyer); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                            <Edit2 size={14} /> Edit Buyer
+                          </button>
+                          <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1 mx-2" />
+                          <button 
+                            onClick={() => { toggleStatus(buyer); setActiveContextMenu(null); }} 
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-colors uppercase tracking-widest ${
+                              buyer.status === 'Active' ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                            }`}
+                          >
+                            <Power size={14} /> {buyer.status === 'Active' ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredBuyers.length === 0 && (
+            <div className="py-20 flex flex-col items-center">
+              <EmptyState message="No buyers found matching your criteria." />
+              <Button variant="ghost" onClick={handleClearFilters} className="mt-2 text-xs font-bold uppercase tracking-widest">Reset All Filters</Button>
+            </div>
+          )}
+        </div>
+      </Card>
+
       <AddBuyerModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
         onAdd={handleAddBuyer} 
+      />
+
+      <EditBuyerModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => { setIsEditModalOpen(false); setSelectedBuyer(null); }} 
+        onUpdate={handleUpdateBuyer}
+        buyer={selectedBuyer}
+      />
+
+      <BuyerFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+      />
+
+      <ConfirmationModal
+        isOpen={isConfirmationOpen}
+        onClose={() => setIsConfirmationOpen(false)}
+        onConfirm={confirmationConfig.onConfirm}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        type={confirmationConfig.type as any}
+      />
+
+      <BuyerDetailsModal
+        isOpen={!!selectedBuyer && !isEditModalOpen && !isConfirmationOpen}
+        onClose={() => setSelectedBuyer(null)}
+        buyer={selectedBuyer}
+        onEdit={() => setIsEditModalOpen(true)}
+        onToggleStatus={() => selectedBuyer && toggleStatus(selectedBuyer)}
       />
     </div>
   );

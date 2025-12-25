@@ -18,28 +18,54 @@ export interface Entity {
 export interface Buyer {
   id: string;
   name: string;
-  contactPerson: string;
-  email: string;
-  industry: string;
-  totalSpent: number;
+  registrationType: 'Registered' | 'Unregistered' | 'Unregistered Distributor' | 'Retail Customer';
+  ntn: string;
+  cnic: string;
+  strn?: string;
+  province: 'BALOCHISTAN' | 'AZAD JAMMU AND KASHMIR' | 'CAPITAL TERRITORY' | 'KHYBER PAKHTUNKHWA' | 'PUNJAB' | 'SINDH' | 'GILGIT BALTISTAN';
+  address: string;
+  status: 'Active' | 'Inactive';
+  createdAt: string;
 }
 
 export interface InvoiceItem {
   id: string;
+  hsCode: string;
   description: string;
+  saleType: string;
   quantity: number;
-  price: number;
+  uom: string;
+  rate: number;
+  unitPrice: number;
+  salesValueExclTax: number;
+  salesTax: number;
+  discount: number;
+  otherDiscount: number;
+  taxWithheld: number;
+  extraTax: number;
+  furtherTax: number;
+  fedPayable: number;
+  t236g: number;
+  t236h: number;
+  tradeDiscount: number;
+  fixedValue: number;
+  sroSchedule?: string;
+  sroItemSerial?: string;
+  totalItemValue: number;
 }
 
 export interface Invoice {
   id: string;
   number: string;
+  issueDate: string;
+  dueDate: string;
+  referenceNumber?: string;
+  documentType: 'Sale Invoice' | 'Debit Note' | 'Credit Note';
+  salesman?: string;
   buyerId: string;
   entityId: string;
   items: InvoiceItem[];
   status: 'Paid' | 'Draft' | 'Overdue' | 'Pending';
-  dueDate: string;
-  issueDate: string;
   total: number;
 }
 
