@@ -15,13 +15,15 @@ import {
   Printer,
   Send,
   Trash2,
-  Clock
+  Clock,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { CreateInvoiceModal } from '../components/invoices/CreateInvoiceModal';
+import { BulkUploadModal } from '../components/invoices/BulkUploadModal';
 import { InvoicePreview } from '../components/invoices/InvoicePreview';
 import { InvoiceFilterModal } from '../components/invoices/InvoiceFilterModal';
 import { AddBuyerModal } from '../components/buyers/AddBuyerModal';
@@ -75,6 +77,7 @@ const Invoices: React.FC = () => {
   const [buyers, setBuyers] = useState<Buyer[]>(MOCK_BUYERS);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [selectedInvoiceForPreview, setSelectedInvoiceForPreview] = useState<Invoice | null>(null);
@@ -163,9 +166,19 @@ const Invoices: React.FC = () => {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Financial Records</h1>
             <p className="text-slate-500">Professional compliant invoicing for your global operations.</p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-xl shadow-indigo-500/10 h-12">
-            New Document
-          </Button>
+          <div className="flex gap-4">
+            <Button 
+              variant="secondary" 
+              onClick={() => setIsBulkUploadOpen(true)} 
+              icon={<Upload size={20} />} 
+              className="rounded-2xl h-12"
+            >
+              Upload
+            </Button>
+            <Button onClick={() => setIsModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-xl shadow-indigo-500/10 h-12">
+              New Document
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -364,6 +377,11 @@ const Invoices: React.FC = () => {
           setIsModalOpen(false);
           setIsBuyerModalOpen(true);
         }}
+      />
+
+      <BulkUploadModal 
+        isOpen={isBulkUploadOpen} 
+        onClose={() => setIsBulkUploadOpen(false)} 
       />
 
       <InvoiceFilterModal

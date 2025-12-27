@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
@@ -7,7 +8,9 @@ import { Invoice, InvoiceItem, Buyer } from '../../types';
 import { Plus, Trash2, UserPlus, Calculator, ShoppingCart, FileText, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Credit Note', 'Debit Note'];
+// Fix: Use 'as const' to ensure these values are treated as specific literals rather than just strings
+const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Credit Note', 'Debit Note'] as const;
+
 const SALE_TYPES = [
   "Select sale type...",
   "Goods at standard rate (default)",
@@ -1057,6 +1060,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     number: nextInvoiceNumber,
     issueDate: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    // Fix: properly type the default document type
     documentType: DOCUMENT_TYPES[0],
     salesman: '',
     referenceNumber: '',
@@ -1145,7 +1149,13 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
             <Input label="Reference Number" placeholder="Optional" value={invoiceData.referenceNumber} onChange={e => setInvoiceData({...invoiceData, referenceNumber: e.target.value})} />
             <Input label="Salesman" placeholder="Name" value={invoiceData.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
             <div className="col-span-2">
-              <Select label="Document Type" options={DOCUMENT_TYPES} value={invoiceData.documentType || DOCUMENT_TYPES[0]} onChange={val => setInvoiceData({...invoiceData, documentType: val as any})} />
+              {/* Fix: casting the Select value change to satisfy the strict union type of Invoice['documentType'] */}
+              <Select 
+                label="Document Type" 
+                options={[...DOCUMENT_TYPES]} 
+                value={invoiceData.documentType || DOCUMENT_TYPES[0]} 
+                onChange={val => setInvoiceData({...invoiceData, documentType: val as Invoice['documentType']})} 
+              />
             </div>
           </div>
         </div>

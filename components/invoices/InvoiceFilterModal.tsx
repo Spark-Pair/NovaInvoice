@@ -6,6 +6,10 @@ import { Button } from '../Button';
 import { Input } from '../Input';
 import { Select } from '../Select';
 
+// Fix: Included 'Purchase Invoice' to align with the expanded documentType union in types.ts
+const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Debit Note', 'Credit Note'];
+const STATUS_OPTIONS = ['Paid', 'Pending', 'Overdue', 'Draft'];
+
 interface InvoiceFilterModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,9 +18,6 @@ interface InvoiceFilterModalProps {
   onApply: () => void;
   onClear: () => void;
 }
-
-const DOCUMENT_TYPES = ['Sale Invoice', 'Debit Note', 'Credit Note'];
-const STATUS_OPTIONS = ['Paid', 'Pending', 'Overdue', 'Draft'];
 
 export const InvoiceFilterModal: React.FC<InvoiceFilterModalProps> = ({
   isOpen,

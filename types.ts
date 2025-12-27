@@ -1,4 +1,5 @@
 
+
 export interface Entity {
   id: string;
   businessName: string;
@@ -60,7 +61,8 @@ export interface Invoice {
   issueDate: string;
   dueDate: string;
   referenceNumber?: string;
-  documentType: 'Sale Invoice' | 'Debit Note' | 'Credit Note';
+  // Fix: Added 'Purchase Invoice' to match available options in the UI
+  documentType: 'Sale Invoice' | 'Debit Note' | 'Credit Note' | 'Purchase Invoice';
   salesman?: string;
   buyerId: string;
   entityId: string;
