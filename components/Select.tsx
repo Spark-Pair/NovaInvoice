@@ -25,7 +25,7 @@ export const Select: React.FC<SelectProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredOptions = options.filter(opt => 
-    opt.toLowerCase().includes(search.toLowerCase())
+    opt.text.toLowerCase().includes(search.toLowerCase())
   );
 
   useEffect(() => {
@@ -86,20 +86,20 @@ export const Select: React.FC<SelectProps> = ({
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option) => (
                   <li 
-                    key={option}
+                    key={option.text}
                     onClick={() => {
                       onChange(option);
                       setIsOpen(false);
                       setSearch("");
                     }}
                     className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm cursor-pointer transition-colors ${
-                      value === option 
+                      value === option.text 
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 font-bold' 
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                     }`}
                   >
-                    {option}
-                    {value === option && <Check size={16} />}
+                    {option.text}
+                    {value === option.text && <Check size={16} />}
                   </li>
                 ))
               ) : (

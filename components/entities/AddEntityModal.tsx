@@ -6,6 +6,7 @@ import { Button } from '../Button';
 import { Select } from '../Select';
 import { Entity } from '../../types';
 import { Upload, X, User as UserIcon, Lock } from 'lucide-react';
+import api from '@/axios';
 
 interface AddEntityModalProps {
   isOpen: boolean;
@@ -14,28 +15,28 @@ interface AddEntityModalProps {
 }
 
 const REGISTRATION_TYPES = [
-  'Registered',
-  'Unregistered',
-  'Unregistered Distributor',
-  'Retail Customer'
+  {text: 'Registered', value: 'registered'},
+  {text: 'Unregistered', value: 'unregistered'},
+  {text: 'Unregistered Distributor', value: 'unregistered_distributor'},
+  {text: 'Retail Customer', value: 'retail_customer'},
 ];
 
 const PROVINCES = [
-  'BALOCHISTAN',
-  'AZAD JAMMU AND KASHMIR',
-  'CAPITAL TERRITORY',
-  'KHYBER PAKHTUNKHWA',
-  'PUNJAB',
-  'SINDH',
-  'GILGIT BALTISTAN'
+  {text: 'BALOCHISTAN', value: 'BALOCHISTAN'},
+  {text: 'AZAD JAMMU AND KASHMIR', value: 'AZAD JAMMU AND KASHMIR'},
+  {text: 'CAPITAL TERRITORY', value: 'CAPITAL TERRITORY'},
+  {text: 'KHYBER PAKHTUNKHWA', value: 'KHYBER PAKHTUNKHWA'},
+  {text: 'PUNJAB', value: 'PUNJAB'},
+  {text: 'SINDH', value: 'SINDH'},
+  {text: 'GILGIT BALTISTAN', value: 'GILGIT BALTISTAN'}
 ];
 
 export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose, onAdd }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Entity>>({
+  const [formData, setFormData] = useState({
     businessName: '',
-    registrationType: 'Registered',
+    registrationType: REGISTRATION_TYPES[0],
     ntn: '',
     cnic: '',
     strn: '',
@@ -57,45 +58,69 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
     }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (
-      formData.businessName && 
-      formData.registrationType && 
-      formData.ntn && 
-      formData.cnic && 
-      formData.province && 
+      formData.businessName &&
+      formData.registrationType &&
+      formData.ntn &&
+      formData.cnic &&
+      formData.province &&
       formData.fullAddress &&
       formData.username &&
       formData.password
     ) {
-      const entity: Entity = {
-        id: Math.random().toString(36).substr(2, 9),
-        businessName: formData.businessName!,
-        registrationType: formData.registrationType as any,
-        ntn: formData.ntn!,
-        cnic: formData.cnic!,
-        strn: formData.strn,
-        province: formData.province as any,
-        fullAddress: formData.fullAddress!,
-        logoUrl: logoPreview || undefined,
-        status: 'Active',
-        createdAt: new Date().toISOString().split('T')[0],
-        username: formData.username,
-        password: formData.password
-      };
-      onAdd(entity);
-      setFormData({
-        businessName: '',
-        registrationType: 'Registered',
-        ntn: '',
-        cnic: '',
-        strn: '',
-        province: 'PUNJAB',
-        fullAddress: '',
-        username: '',
-        password: ''
-      });
-      setLogoPreview(null);
+      try {
+        const payload = {
+          image: logoPreview || '',
+          businessName: formData.businessName,
+          registrationType: formData.registrationType.value,
+          ntn: formData.ntn,
+          cnic: formData.cnic,
+          strn: formData.strn,
+          province: formData.province.value,
+          fullAddress: formData.fullAddress,
+          username: formData.username,
+          password: formData.password,
+        };
+
+        console.log(payload);
+        
+
+        const { data } = await api.post('/entities', payload);
+
+        // data.entity contains the populated user
+        onAdd({
+          id: data.entity._id,
+          businessName: data.entity.businessName,
+          registrationType: data.entity.registrationType,
+          ntn: data.entity.ntn,
+          cnic: data.entity.cnic,
+          strn: data.entity.strn,
+          province: data.entity.province,
+          fullAddress: data.entity.fullAddress,
+          logoUrl: data.entity.image || undefined,
+          status: 'Active',
+          createdAt: new Date(data.entity.createdAt).toISOString().split('T')[0],
+          username: data.entity.user?.username,
+          password: formData.password, // optional: do not store passwords in frontend
+        });
+
+        // Reset form
+        setFormData({
+          businessName: '',
+          registrationType: 'Registered',
+          ntn: '',
+          cnic: '',
+          strn: '',
+          province: 'PUNJAB',
+          fullAddress: '',
+          username: '',
+          password: ''
+        });
+        setLogoPreview(null);
+      } catch (err: any) {
+        alert(err.response?.data?.message || err.message || 'Failed to create entity');
+      }
     }
   };
 
@@ -171,7 +196,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
             <Select 
               label="Registration Type *"
               options={REGISTRATION_TYPES as any}
-              value={formData.registrationType || ""}
+              value={formData.registrationType.text || ""}
               onChange={val => setFormData({...formData, registrationType: val as any})}
               placeholder="Choose type"
             />
@@ -179,7 +204,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
             <Select 
               label="Province *"
               options={PROVINCES as any}
-              value={formData.province || ""}
+              value={formData.province.text || ""}
               onChange={val => setFormData({...formData, province: val as any})}
               placeholder="Select province"
             />

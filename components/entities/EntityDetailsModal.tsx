@@ -48,8 +48,10 @@ export const EntityDetailsModal: React.FC<EntityDetailsModalProps> = ({
                 entity.businessName.charAt(0)
               )}
             </div>
-            {entity.status === 'Active' && (
+            {entity.status === 'Active' ? (
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white dark:border-slate-900 shadow-sm" />
+            ) : (
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-rose-400 rounded-full border-4 border-white dark:border-slate-900 shadow-sm" />
             )}
           </div>
           

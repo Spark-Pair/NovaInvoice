@@ -81,7 +81,9 @@ export interface DashboardStats {
 export type Theme = 'light' | 'dark';
 
 export interface User {
-  id: string;
+  _id: string;
   name: string;
-  email: string;
+  username: string;
+  role: string;
+  token: string;
 }

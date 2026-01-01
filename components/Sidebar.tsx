@@ -32,12 +32,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, theme, toggleT
   const [showProfileActions, setShowProfileActions] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const isAuthorized = (allowedRoles = []) => allowedRoles.includes(user.role);
+
   const menuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <Building2 size={20} />, label: 'Entities', path: '/entities' },
-    { icon: <Users size={20} />, label: 'Buyers', path: '/buyers' },
-    { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices' },
-    { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard', show: isAuthorized(['admin']) },
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard', show: isAuthorized(['client']) },
+    
+    { icon: <Building2 size={20} />, label: 'Entities', path: '/entities', show: isAuthorized(['admin']) },
+
+    { icon: <Users size={20} />, label: 'Buyers', path: '/buyers', show: isAuthorized(['client']) },
+    { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices', show: isAuthorized(['client']) },
+
+    { icon: <Settings size={20} />, label: 'Settings', path: '/settings', show: isAuthorized(['admin']) },
+    { icon: <Settings size={20} />, label: 'Settings', path: '/settings', show: isAuthorized(['client']) },
   ];
 
   useEffect(() => {
@@ -63,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, theme, toggleT
         <hr className="border border-slate-100 dark:border-slate-800 my-5" />
 
         <nav className="flex-1 space-y-1">
-          {menuItems.map(item => (
+          {menuItems.filter(item => item.show).map(item => (
             <Link 
               key={item.path} 
               to={item.path}
@@ -129,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, theme, toggleT
             </div>
             <div className="flex-1 text-left min-w-0">
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{user.name}</p>
-              <p className="text-xs text-slate-500 truncate">Pro Account</p>
+              <p className="text-xs text-slate-500 truncate capitalize">{user.role == 'admin' ? 'Firm Admin' : user.role}</p>
             </div>
             <ChevronUp size={16} className={`text-slate-400 transition-transform duration-300 ${showProfileActions ? 'rotate-180' : ''}`} />
           </button>

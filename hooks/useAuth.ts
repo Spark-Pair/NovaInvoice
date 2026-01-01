@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { User } from '../types';
+import api from '@/axios';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(() => {
@@ -13,9 +14,17 @@ export const useAuth = () => {
     localStorage.setItem('user', JSON.stringify(u));
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const logout = async () => {
+    try {
+      // 🔐 Invalidate session on backend
+      await api.post('/users/logout');
+    } catch (err) {
+      // Even if API fails, still logout locally
+      console.warn('Logout API failed, clearing local session');
+    } finally {
+      setUser(null);
+      localStorage.removeItem('user');
+    }
   };
 
   return { user, login, logout };
