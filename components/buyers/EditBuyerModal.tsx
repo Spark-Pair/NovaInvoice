@@ -14,6 +14,7 @@ interface EditBuyerModalProps {
 }
 
 const REGISTRATION_TYPES = [
+  'Select...',
   'Registered',
   'Unregistered',
   'Unregistered Distributor',
@@ -21,6 +22,7 @@ const REGISTRATION_TYPES = [
 ];
 
 const PROVINCES = [
+  'Select...',
   'BALOCHISTAN',
   'AZAD JAMMU AND KASHMIR',
   'CAPITAL TERRITORY',

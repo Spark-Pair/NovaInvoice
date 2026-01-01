@@ -15,20 +15,22 @@ interface AddEntityModalProps {
 }
 
 const REGISTRATION_TYPES = [
-  {text: 'Registered', value: 'registered'},
-  {text: 'Unregistered', value: 'unregistered'},
-  {text: 'Unregistered Distributor', value: 'unregistered_distributor'},
-  {text: 'Retail Customer', value: 'retail_customer'},
+  'Select...',
+  'Registered',
+  'Unregistered',
+  'Unregistered Distributor',
+  'Retail Customer'
 ];
 
 const PROVINCES = [
-  {text: 'BALOCHISTAN', value: 'BALOCHISTAN'},
-  {text: 'AZAD JAMMU AND KASHMIR', value: 'AZAD JAMMU AND KASHMIR'},
-  {text: 'CAPITAL TERRITORY', value: 'CAPITAL TERRITORY'},
-  {text: 'KHYBER PAKHTUNKHWA', value: 'KHYBER PAKHTUNKHWA'},
-  {text: 'PUNJAB', value: 'PUNJAB'},
-  {text: 'SINDH', value: 'SINDH'},
-  {text: 'GILGIT BALTISTAN', value: 'GILGIT BALTISTAN'}
+  'Select...',
+  'BALOCHISTAN',
+  'AZAD JAMMU AND KASHMIR',
+  'CAPITAL TERRITORY',
+  'KHYBER PAKHTUNKHWA',
+  'PUNJAB',
+  'SINDH',
+  'GILGIT BALTISTAN'
 ];
 
 export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose, onAdd }) => {
@@ -40,7 +42,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
     ntn: '',
     cnic: '',
     strn: '',
-    province: 'PUNJAB',
+    province: PROVINCES[0],
     fullAddress: '',
     status: 'Active',
     username: '',
@@ -73,11 +75,11 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
         const payload = {
           image: logoPreview || '',
           businessName: formData.businessName,
-          registrationType: formData.registrationType.value,
+          registrationType: formData.registrationType,
           ntn: formData.ntn,
           cnic: formData.cnic,
           strn: formData.strn,
-          province: formData.province.value,
+          province: formData.province,
           fullAddress: formData.fullAddress,
           username: formData.username,
           password: formData.password,
@@ -108,11 +110,11 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
         // Reset form
         setFormData({
           businessName: '',
-          registrationType: 'Registered',
+          registrationType: REGISTRATION_TYPES[0],
           ntn: '',
           cnic: '',
           strn: '',
-          province: 'PUNJAB',
+          province: PROVINCES[0],
           fullAddress: '',
           username: '',
           password: ''
@@ -196,7 +198,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
             <Select 
               label="Registration Type *"
               options={REGISTRATION_TYPES as any}
-              value={formData.registrationType.text || ""}
+              value={formData.registrationType || ""}
               onChange={val => setFormData({...formData, registrationType: val as any})}
               placeholder="Choose type"
             />
@@ -204,7 +206,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
             <Select 
               label="Province *"
               options={PROVINCES as any}
-              value={formData.province.text || ""}
+              value={formData.province || ""}
               onChange={val => setFormData({...formData, province: val as any})}
               placeholder="Select province"
             />

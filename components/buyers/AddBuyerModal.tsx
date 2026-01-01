@@ -13,6 +13,7 @@ interface AddBuyerModalProps {
 }
 
 const REGISTRATION_TYPES = [
+  'Select...',
   'Registered',
   'Unregistered',
   'Unregistered Distributor',
@@ -20,6 +21,7 @@ const REGISTRATION_TYPES = [
 ];
 
 const PROVINCES = [
+  'Select...',
   'BALOCHISTAN',
   'AZAD JAMMU AND KASHMIR',
   'CAPITAL TERRITORY',
@@ -32,11 +34,11 @@ const PROVINCES = [
 export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [formData, setFormData] = useState<Partial<Buyer>>({
     name: '',
-    registrationType: 'Registered',
+    registrationType: REGISTRATION_TYPES[0],
     ntn: '',
     cnic: '',
     strn: '',
-    province: 'PUNJAB',
+    province: PROVINCES[0],
     address: '',
     status: 'Active'
   });
@@ -65,11 +67,11 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
       onAdd(buyer);
       setFormData({
         name: '',
-        registrationType: 'Registered',
+        registrationType: REGISTRATION_TYPES[0],
         ntn: '',
         cnic: '',
         strn: '',
-        province: 'PUNJAB',
+        province: PROVINCES[0],
         address: ''
       });
     }
