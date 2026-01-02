@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
@@ -9,27 +9,34 @@ interface ResetPasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
   onReset: () => void;
-  entityName: string;
+  entityName: string; 
 }
 
-export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ isOpen, onClose, onReset, entityName }) => {
+export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ isOpen, onClose, onReset, entityName, entityId }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleReset = () => {
+  useEffect(() => {
+    handleValidatePassword()
+  }, [password, confirmPassword])
+  
+  const handleValidatePassword = () => {
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
     setError('');
-    onReset();
+  }
+
+  const handleReset = () => {
+    handleValidatePassword();
+    onReset(entityId, entityName, password); // handles
     setPassword('');
-    // Fix: Use the setter function 'setConfirmPassword' instead of the state value 'confirmPassword'
     setConfirmPassword('');
     onClose();
   };
@@ -62,7 +69,8 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ isOpen, 
             onChange={e => setConfirmPassword(e.target.value)}
             icon={<Lock size={16} className="text-slate-400" />}
           />
-          {error && <p className="text-xs font-bold text-rose-500 ml-1">{error}</p>}
+          {/* {password != confirmPassword && <p className="text-xs font-bold text-rose-500 ml-1">Passwords do not match</p>} */}
+          {error && <p className="text-xs font-bold text-rose-500 ml-1">{error}</p>}  
         </div>
 
         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -71,7 +79,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ isOpen, 
             className="flex-1 rounded-2xl shadow-lg shadow-indigo-500/20" 
             icon={<KeyRound size={18} />}
             onClick={handleReset}
-            disabled={!password || !confirmPassword}
+            disabled={error}
           >
             Reset Password
           </Button>

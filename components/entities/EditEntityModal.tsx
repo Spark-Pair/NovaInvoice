@@ -6,6 +6,7 @@ import { Button } from '../Button';
 import { Select } from '../Select';
 import { Entity } from '../../types';
 import { Upload, X, ShieldAlert } from 'lucide-react';
+import api from '@/axios';
 
 interface EditEntityModalProps {
   isOpen: boolean;
@@ -56,13 +57,58 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClos
     }
   };
 
-  const handleUpdate = () => {
-    if (entity && formData.businessName && formData.ntn && formData.cnic && formData.fullAddress) {
-      onUpdate({
-        ...entity,
-        ...formData,
-        logoUrl: logoPreview || undefined
-      } as Entity);
+  const handleUpdate = async () => {
+    if (
+      entity &&
+      formData.businessName &&
+      formData.registrationType &&
+      formData.ntn &&
+      formData.cnic &&
+      formData.province &&
+      formData.fullAddress
+    ) {
+      try {
+        const payload = {
+          image: logoPreview || '',
+          businessName: formData.businessName,
+          registrationType: formData.registrationType,
+          ntn: formData.ntn,
+          cnic: formData.cnic,
+          strn: formData.strn,
+          province: formData.province,
+          fullAddress: formData.fullAddress,
+        };
+
+        console.log(payload);
+
+        // 🔥 Update API call
+        // const { data } = await api.put(`/entities/${entity.id}`, payload);
+        // or PATCH if your backend uses patch:
+        const { data } = await api.patch(`/entities/${entity.id}`, payload);
+
+        onUpdate({
+          id: data.entity._id,
+          businessName: data.entity.businessName,
+          registrationType: data.entity.registrationType,
+          ntn: data.entity.ntn,
+          cnic: data.entity.cnic,
+          strn: data.entity.strn,
+          province: data.entity.province,
+          fullAddress: data.entity.fullAddress,
+          logoUrl: data.entity.image || undefined,
+          status: data.entity.status || 'Active',
+          createdAt: new Date(data.entity.createdAt).toISOString().split('T')[0],
+          username: data.entity.user?.username,
+        });
+
+        onClose();
+      } catch (err: any) {
+        alert(
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to update entity'
+        );
+      }
     }
   };
 

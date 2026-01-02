@@ -32,7 +32,11 @@ import Loader from '@/components/Loader';
 
 const Entities: React.FC = () => {
   const [entities, setEntities] = useState<Entity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState<Number>(0);
+  const [totalRecords, setTotalRecords] = useState<Number>(0);
+  
+  const [isLoading, setIsLoading] = useState(true);        // initial full page
+  const [isTableLoading, setIsTableLoading] = useState(false); // pagination only
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -40,38 +44,6 @@ const Entities: React.FC = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState<{ title: string; message: string; onConfirm: () => void; type: 'danger' | 'warning' | 'info' }>({ title: '', message: '', onConfirm: () => {}, type: 'info' });
-
-  useEffect(() => {
-    const fetchEntities = async () => {
-      try {
-        setIsLoading(true);
-        const { data } = await api.get('/entities'); // GET /api/entities
-        // Transform backend data to match your frontend Entity type
-        const formattedEntities = data.map((e: any) => ({
-          id: e._id,
-          businessName: e.businessName,
-          registrationType: e.registrationType,
-          ntn: e.ntn,
-          cnic: e.cnic,
-          strn: e.strn,
-          province: e.province,
-          fullAddress: e.fullAddress,
-          status: e.isActive ? 'Active' : 'Inactive', // or compute from e if you store status in backend
-          createdAt: new Date(e.createdAt).toISOString().split('T')[0],
-          username: e.user?.username || '',
-          logoUrl: e.image || undefined,
-        }));
-        setEntities(formattedEntities);
-      } catch (err: any) {
-        console.error(err);
-        // setError(err.response?.data?.message || err.message || 'Failed to fetch entities');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEntities();
-  }, []);
 
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [activeContextMenu, setActiveContextMenu] = useState<string | null>(null);
@@ -81,32 +53,62 @@ const Entities: React.FC = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
-  const itemsPerPage = 50;
+  const itemsPerPage = 1;
 
-  // Filter Logic
-  const filteredEntities = entities.filter(entity => {
-    const f = appliedFilters;
-    if (f.username && !entity.username?.toLowerCase().includes(f.username.toLowerCase())) return false;
-    if (f.businessName && !entity.businessName.toLowerCase().includes(f.businessName.toLowerCase())) return false;
-    if (f.registrationType && entity.registrationType !== f.registrationType) return false;
-    if (f.province && entity.province !== f.province) return false;
-    if (f.status && entity.status !== f.status) return false;
-    if (f.ntn && !entity.ntn.includes(f.ntn)) return false;
-    if (f.cnic && !entity.cnic.includes(f.cnic)) return false;
-    if (f.strn && (!entity.strn || !entity.strn.includes(f.strn))) return false;
-    if (f.dateFrom && entity.createdAt < f.dateFrom) return false;
-    if (f.dateTo && entity.createdAt > f.dateTo) return false;
-    return true;
-  });
+  useEffect(() => {
+    fetchEntities(currentPage);
+  }, []);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEntities.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEntities = filteredEntities.slice(startIndex, startIndex + itemsPerPage);
+  const fetchEntities = async (page = 1, showTableLoader = false) => {
+    try {
+      if (showTableLoader) {
+        setIsTableLoading(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      const { data } = await api.get('/entities', {
+        params: {
+          page,
+          limit: itemsPerPage,
+        }
+      });
+
+      const formattedEntities = data.data.map((e: any) => ({
+        id: e._id,
+        businessName: e.businessName,
+        registrationType: e.registrationType,
+        ntn: e.ntn,
+        cnic: e.cnic,
+        strn: e.strn,
+        province: e.province,
+        fullAddress: e.fullAddress,
+        status: e.isActive ? 'Active' : 'Inactive',
+        createdAt: new Date(e.createdAt).toISOString().split('T')[0],
+        username: e.user?.username || '',
+        logoUrl: e.image || undefined,
+      }));
+
+      setEntities(formattedEntities);
+      setTotalPages(data.meta.totalPages);
+      setTotalRecords(data.meta.total);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+      setIsTableLoading(false);
+    }
+  };
+
+  const startRow = (currentPage - 1) * itemsPerPage + 1;
+  const endRow = Math.min(currentPage * itemsPerPage, totalRecords);
 
   const handlePageChange = (newPage: number) => {
-    const page = Math.min(Math.max(1, newPage), totalPages);
-    setCurrentPage(page);
-    setPageInput(page.toString());
+    if (newPage < 1 || newPage > totalPages) return;
+
+    setCurrentPage(newPage);
+    setPageInput(newPage.toString());
+    fetchEntities(newPage, true); // 👈 table loader
   };
 
   const handleAddEntity = (entity: Entity) => {
@@ -158,14 +160,24 @@ const Entities: React.FC = () => {
     setIsConfirmationOpen(true);
   };
 
-  const handleResetPassword = () => {
-    setIsConfirmationOpen(true);
+  const handleResetPassword = (entityId: string, entityName: string, password: string) => {
     setConfirmationConfig({
-      title: 'Password Updated',
-      message: 'The password has been successfully reset for this entity.',
-      type: 'info',
-      onConfirm: () => setIsConfirmationOpen(false)
+      title: 'Reset Password',
+      message: `Are you sure you want to reset the password for ${entityName}?`,
+      type: 'danger',
+
+      onConfirm: async () => {
+        try {
+          await api.patch(`/entities/${entityId}/reset-password`, { password });
+        } catch (err) {
+          console.error('Failed to reset password', err);
+        } finally {
+          setIsConfirmationOpen(false)
+        }
+      },
     });
+
+    setIsConfirmationOpen(true);
   };
 
   const handleApplyFilters = () => {
@@ -236,37 +248,47 @@ const Entities: React.FC = () => {
 
         <Card className="overflow-hidden p-0 grow flex flex-col shadow-xl">
           <div className="flex flex-wrap items-center justify-between p-5 gap-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#080C1C] p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage - 1); }}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <div className="flex items-center gap-2 px-2">
-                  <span className="text-sm font-bold text-slate-400">Page</span>
-                  <input 
-                    type="text"
-                    value={pageInput}
-                    onChange={(e) => setPageInput(e.target.value)}
-                    onBlur={() => handlePageChange(parseInt(pageInput))}
-                    onKeyDown={(e) => e.key === 'Enter' && handlePageChange(parseInt(pageInput))}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-12 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-black focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                  <span className="text-sm font-bold text-slate-400">of {totalPages}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#080C1C] p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage - 1); }}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <div className="flex items-center gap-2 px-2">
+                    <span className="text-sm font-bold text-slate-400">Page</span>
+                    <input 
+                      type="text"
+                      value={pageInput}
+                      onChange={(e) => setPageInput(e.target.value)}
+                      onBlur={() => handlePageChange(parseInt(pageInput))}
+                      onKeyDown={(e) => e.key === 'Enter' && handlePageChange(parseInt(pageInput))}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-12 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-black focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                    <span className="text-sm font-bold text-slate-400">of {totalPages}</span>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage + 1); }}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage + 1); }}
-                  disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
-                >
-                  <ChevronRight size={18} />
-                </button>
+              </div>
+
+              <div className="flex flex-col text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                <span>Rows per page: {itemsPerPage}</span>
+                <span className="text-slate-400 normal-case font-semibold tracking-normal">
+                  Showing {startRow}–{endRow} of {totalRecords}
+                </span>
               </div>
             </div>
+            
             <div className="flex gap-4">
               <Button 
                 variant={Object.keys(appliedFilters).length > 0 ? "primary" : "secondary"} 
@@ -281,6 +303,12 @@ const Entities: React.FC = () => {
           </div>
 
           <div className="overflow-x-auto overflow-y-auto relative grow custom-scrollbar">
+            {isTableLoading && (
+              <div className="absolute inset-0 z-30 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm flex items-center justify-center">
+                <Loader size="sm" />
+              </div>
+            )}
+
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-20 bg-slate-50/90 dark:bg-[#080C1C] backdrop-blur-md">
                 <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 text-xs font-black uppercase tracking-wider">
@@ -293,7 +321,7 @@ const Entities: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                {paginatedEntities.map(entity => (
+                {entities.map(entity => (
                   <tr 
                     key={entity.id} 
                     className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer"
@@ -385,7 +413,8 @@ const Entities: React.FC = () => {
                 ))}
               </tbody>
             </table>
-            {filteredEntities.length === 0 && (
+
+            {entities.length === 0 && (
               <div className="py-20 flex flex-col items-center">
                 <EmptyState message="No business entities matching your criteria." />
                 <Button variant="ghost" onClick={handleClearFilters} className="mt-2 text-xs font-bold uppercase tracking-widest">Reset All Filters</Button>
@@ -414,6 +443,7 @@ const Entities: React.FC = () => {
         onClose={() => setIsResetPasswordModalOpen(false)}
         onReset={handleResetPassword}
         entityName={selectedEntity?.businessName || ''}
+        entityId={selectedEntity?.id || ''}
       />
 
       <EntityFilterModal

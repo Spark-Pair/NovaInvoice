@@ -85,8 +85,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
           password: formData.password,
         };
 
-        console.log(payload);
-        
+        // console.log(payload);
 
         const { data } = await api.post('/entities', payload);
 
@@ -104,7 +103,6 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
           status: 'Active',
           createdAt: new Date(data.entity.createdAt).toISOString().split('T')[0],
           username: data.entity.user?.username,
-          password: formData.password, // optional: do not store passwords in frontend
         });
 
         // Reset form
