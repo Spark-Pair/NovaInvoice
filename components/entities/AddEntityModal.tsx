@@ -88,22 +88,8 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
         // console.log(payload);
 
         const { data } = await api.post('/entities', payload);
-
-        // data.entity contains the populated user
-        onAdd({
-          id: data.entity._id,
-          businessName: data.entity.businessName,
-          registrationType: data.entity.registrationType,
-          ntn: data.entity.ntn,
-          cnic: data.entity.cnic,
-          strn: data.entity.strn,
-          province: data.entity.province,
-          fullAddress: data.entity.fullAddress,
-          logoUrl: data.entity.image || undefined,
-          status: 'Active',
-          createdAt: new Date(data.entity.createdAt).toISOString().split('T')[0],
-          username: data.entity.user?.username,
-        });
+        
+        onAdd();
 
         // Reset form
         setFormData({

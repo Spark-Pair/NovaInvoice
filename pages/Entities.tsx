@@ -34,6 +34,7 @@ const Entities: React.FC = () => {
   const [entities, setEntities] = useState<Entity[]>([]);
   const [totalPages, setTotalPages] = useState<Number>(0);
   const [totalRecords, setTotalRecords] = useState<Number>(0);
+  const [stats, setStats] = useState({});
   
   const [isLoading, setIsLoading] = useState(true);        // initial full page
   const [isTableLoading, setIsTableLoading] = useState(false); // pagination only
@@ -55,9 +56,30 @@ const Entities: React.FC = () => {
   const [pageInput, setPageInput] = useState('1');
   const itemsPerPage = 1;
 
+  // useEffect(() => {
+  //   fetchEntities(currentPage);
+  // }, []);
+
   useEffect(() => {
-    fetchEntities(currentPage);
-  }, []);
+    fetchEntities(currentPage, true);
+  }, [currentPage, appliedFilters]);
+
+  const buildFilterParams = () => {
+    const params: Record<string, any> = {};
+
+    Object.entries(appliedFilters).forEach(([key, value]) => {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== '' &&
+        value !== 'Select...'
+      ) {
+        params[key] = value;
+      }
+    });
+
+    return params;
+  };
 
   const fetchEntities = async (page = 1, showTableLoader = false) => {
     try {
@@ -67,11 +89,14 @@ const Entities: React.FC = () => {
         setIsLoading(true);
       }
 
+      const filterParams = buildFilterParams();
+
       const { data } = await api.get('/entities', {
         params: {
           page,
           limit: itemsPerPage,
-        }
+          ...filterParams, // 🔥 filters + pagination together
+        },
       });
 
       const formattedEntities = data.data.map((e: any) => ({
@@ -92,6 +117,7 @@ const Entities: React.FC = () => {
       setEntities(formattedEntities);
       setTotalPages(data.meta.totalPages);
       setTotalRecords(data.meta.total);
+      setStats(data.stats);
     } catch (err) {
       console.error(err);
     } finally {
@@ -99,6 +125,47 @@ const Entities: React.FC = () => {
       setIsTableLoading(false);
     }
   };
+
+  // const fetchEntities = async (page = 1, showTableLoader = false) => {
+  //   try {
+  //     if (showTableLoader) {
+  //       setIsTableLoading(true);
+  //     } else {
+  //       setIsLoading(true);
+  //     }
+
+  //     const { data } = await api.get('/entities', {
+  //       params: {
+  //         page,
+  //         limit: itemsPerPage,
+  //       }
+  //     });
+
+  //     const formattedEntities = data.data.map((e: any) => ({
+  //       id: e._id,
+  //       businessName: e.businessName,
+  //       registrationType: e.registrationType,
+  //       ntn: e.ntn,
+  //       cnic: e.cnic,
+  //       strn: e.strn,
+  //       province: e.province,
+  //       fullAddress: e.fullAddress,
+  //       status: e.isActive ? 'Active' : 'Inactive',
+  //       createdAt: new Date(e.createdAt).toISOString().split('T')[0],
+  //       username: e.user?.username || '',
+  //       logoUrl: e.image || undefined,
+  //     }));
+
+  //     setEntities(formattedEntities);
+  //     setTotalPages(data.meta.totalPages);
+  //     setTotalRecords(data.meta.total);
+  //   } catch (err) {
+  //     console.error(err);
+  //   } finally {
+  //     setIsLoading(false);
+  //     setIsTableLoading(false);
+  //   }
+  // };
 
   const startRow = (currentPage - 1) * itemsPerPage + 1;
   const endRow = Math.min(currentPage * itemsPerPage, totalRecords);
@@ -111,13 +178,13 @@ const Entities: React.FC = () => {
     fetchEntities(newPage, true); // 👈 table loader
   };
 
-  const handleAddEntity = (entity: Entity) => {
-    setEntities([entity, ...entities]);
+  const handleAddEntity = () => {
+    handleClearFilters();
     setIsAddModalOpen(false);
   };
 
   const handleUpdateEntity = (updatedEntity: Entity) => {
-    setEntities(entities.map(e => e.id === updatedEntity.id ? updatedEntity : e));
+    handleApplyFilters();
     setIsEditModalOpen(false);
     setSelectedEntity(null);
   };
@@ -137,18 +204,19 @@ const Entities: React.FC = () => {
           );
 
           setSelectedEntity(prev => prev ? { ...prev, status: newStatus } : null);
-          
 
-          setEntities(prev =>
-            prev.map(e =>
-              e.id === entity.id
-                ? {
-                    ...e,
-                    status: data.entity.isActive ? 'Active' : 'Inactive',
-                  }
-                : e
-            )
-          );
+          // setEntities(prev =>
+          //   prev.map(e =>
+          //     e.id === entity.id
+          //       ? {
+          //           ...e,
+          //           status: data.entity.isActive ? 'Active' : 'Inactive',
+          //         }
+          //       : e
+          //   )
+          // );
+
+          handleApplyFilters();
         } catch (err) {
           console.error('Failed to toggle entity status', err);
         } finally {
@@ -223,7 +291,7 @@ const Entities: React.FC = () => {
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Total Entities</p>
-              <h3 className="text-4xl font-black mt-1">{entities.length}</h3>
+              <h3 className="text-4xl font-black mt-1">{totalRecords}</h3>
             </div>
           </Card>
           <Card className="flex items-center gap-6 relative overflow-hidden">
@@ -231,8 +299,8 @@ const Entities: React.FC = () => {
               <Tag size={32} />
             </div>
             <div>
-              <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Registered Units</p>
-              <h3 className="text-4xl font-black mt-1">{entities.filter(e => e.registrationType === 'Registered').length}</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Entities</p>
+              <h3 className="text-4xl font-black mt-1">{stats.activeTotal}</h3>
             </div>
           </Card>
           <Card className="flex items-center gap-6 relative overflow-hidden">
@@ -241,7 +309,7 @@ const Entities: React.FC = () => {
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Provinces</p>
-              <h3 className="text-4xl font-black mt-1">{new Set(entities.map(e => e.province)).size}</h3>
+              <h3 className="text-4xl font-black mt-1">{stats.activeProvincesTotal}</h3>
             </div>
           </Card>
         </div>

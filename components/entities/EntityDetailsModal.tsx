@@ -185,7 +185,7 @@ export const EntityDetailsModal: React.FC<EntityDetailsModalProps> = ({
             </Button>
           </div>
           
-          <Button variant="secondary" className="w-full sm:w-auto h-11 px-8 rounded-xl font-black text-xs uppercase tracking-widest bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-none shadow-lg" onClick={onClose}>
+          <Button className="w-full sm:w-auto h-11 px-8 rounded-xl font-black text-xs uppercase tracking-widest bg-slate-900 hover:bg-slate-800 text-white dark:bg-gray-100 dark:hover:bg-gray-300 dark:text-slate-900 border-none shadow-lg" onClick={onClose}>
             Close
           </Button>
         </div>
