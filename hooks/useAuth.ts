@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { User } from '../types';
 import api from '@/axios';
 
@@ -27,5 +27,14 @@ export const useAuth = () => {
     }
   };
 
-  return { user, login, logout };
+  const isAuthorized = useCallback(
+    (allowedRoles: string[] = []) => {
+      if (!user) return false;
+      if (allowedRoles.length === 0) return true;
+      return allowedRoles.includes(user.role);
+    },
+    [user]
+  );
+
+  return { user, login, logout, isAuthorized };
 };

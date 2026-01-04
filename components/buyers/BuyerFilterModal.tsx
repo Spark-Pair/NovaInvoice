@@ -97,8 +97,8 @@ export const BuyerFilterModal: React.FC<BuyerFilterModalProps> = ({
                     <Input 
                       label="Buyer Name" 
                       placeholder="e.g. Acme Corp" 
-                      value={filters.name || ''}
-                      onChange={(e) => updateFilter('name', e.target.value)}
+                      value={filters.buyerName || ''}
+                      onChange={(e) => updateFilter('buyerName', e.target.value)}
                     />
                   </div>
                 </div>
@@ -121,6 +121,12 @@ export const BuyerFilterModal: React.FC<BuyerFilterModalProps> = ({
                       placeholder="00000-0000000-0" 
                       value={filters.cnic || ''}
                       onChange={(e) => updateFilter('cnic', e.target.value)}
+                    />
+                    <Input 
+                      label="STRN" 
+                      placeholder="00-00-0000-000-00" 
+                      value={filters.strn || ''}
+                      onChange={(e) => updateFilter('strn', e.target.value)}
                     />
                   </div>
                 </div>
@@ -147,7 +153,7 @@ export const BuyerFilterModal: React.FC<BuyerFilterModalProps> = ({
                       placeholder="All Provinces"
                     />
                     <Select 
-                      label="Current Status"
+                      label="Status"
                       options={STATUS_OPTIONS}
                       value={filters.status || ''}
                       onChange={(val) => updateFilter('status', val)}

@@ -5,6 +5,7 @@ import { Input } from '../Input';
 import { Button } from '../Button';
 import { Select } from '../Select';
 import { Buyer } from '../../types';
+import api from '@/axios';
 
 interface EditBuyerModalProps {
   isOpen: boolean;
@@ -37,16 +38,65 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
 
   useEffect(() => {
     if (buyer) {
-      setFormData({ ...buyer });
+      setFormData({ ...buyer, buyerName: buyer.name, fullAddress: buyer.address });
     }
   }, [buyer, isOpen]);
 
-  const handleUpdate = () => {
-    if (buyer && formData.name && formData.ntn && formData.cnic && formData.address) {
-      onUpdate({
-        ...buyer,
-        ...formData,
-      } as Buyer);
+  // const handleUpdate = () => {
+  //   if (buyer && formData.buyerName && formData.ntn && formData.cnic && formData.fullAddress) {
+  //     onUpdate({
+  //       ...buyer,
+  //       ...formData,
+  //     } as Buyer);
+  //   }
+  // };
+
+  const handleUpdate = async () => {
+    if (
+      buyer &&
+      formData.buyerName &&
+      formData.registrationType &&
+      formData.ntn &&
+      formData.cnic &&
+      formData.province &&
+      formData.fullAddress
+    ) {
+      try {
+        const payload = {
+          buyerName: formData.buyerName,
+          registrationType: formData.registrationType,
+          ntn: formData.ntn,
+          cnic: formData.cnic,
+          strn: formData.strn,
+          province: formData.province,
+          fullAddress: formData.fullAddress,
+        };
+
+        // 🔥 Update API call
+        // const { data } = await api.put(`/buyers/${buyer.id}`, payload);
+        // or PATCH if your backend uses patch:
+        const { data } = await api.patch(`/buyers/${buyer.id}`, payload);
+
+        onUpdate({
+          id: data.buyer._id,
+          name: data.buyer.buyerName,
+          registrationType: data.buyer.registrationType,
+          ntn: data.buyer.ntn,
+          cnic: data.buyer.cnic,
+          strn: data.buyer.strn,
+          province: data.buyer.province,
+          address: data.buyer.fullAddress,
+          status: data.buyer.status || 'Active',
+        });
+
+        onClose();
+      } catch (err: any) {
+        alert(
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to update buyer'
+        );
+      }
     }
   };
 
@@ -61,8 +111,8 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
               <Input 
                 label="Buyer Name *" 
                 placeholder="Enter buyer's legal name" 
-                value={formData.name || ''}
-                onChange={e => setFormData({...formData, name: e.target.value})}
+                value={formData.buyerName || ''}
+                onChange={e => setFormData({...formData, buyerName: e.target.value})}
               />
             </div>
 
@@ -112,8 +162,8 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
                   rows={3}
                   placeholder="Street, Area, City"
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                  value={formData.address || ''}
-                  onChange={e => setFormData({...formData, address: e.target.value})}
+                  value={formData.fullAddress || ''}
+                  onChange={e => setFormData({...formData, fullAddress: e.target.value})}
                 />
               </div>
             </div>
@@ -125,7 +175,7 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
           <Button 
             className="flex-1 rounded-2xl shadow-lg shadow-indigo-500/20" 
             onClick={handleUpdate}
-            disabled={!formData.name || !formData.ntn || !formData.cnic || !formData.address}
+            disabled={!formData.buyerName || !formData.ntn || !formData.cnic || !formData.fullAddress}
           >
             Update Buyer
           </Button>

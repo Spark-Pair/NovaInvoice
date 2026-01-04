@@ -5,6 +5,7 @@ import { Input } from '../Input';
 import { Button } from '../Button';
 import { Select } from '../Select';
 import { Buyer } from '../../types';
+import api from '@/axios';
 
 interface AddBuyerModalProps {
   isOpen: boolean;
@@ -32,48 +33,53 @@ const PROVINCES = [
 ];
 
 export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, onAdd }) => {
-  const [formData, setFormData] = useState<Partial<Buyer>>({
-    name: '',
+  const [formData, setFormData] = useState({
+    buyerName: '',
     registrationType: REGISTRATION_TYPES[0],
     ntn: '',
     cnic: '',
     strn: '',
     province: PROVINCES[0],
-    address: '',
-    status: 'Active'
+    fullAddress: '',
   });
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (
-      formData.name && 
+      formData.buyerName && 
       formData.registrationType && 
       formData.ntn && 
       formData.cnic && 
       formData.province && 
-      formData.address
+      formData.fullAddress
     ) {
-      const buyer: Buyer = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: formData.name!,
-        registrationType: formData.registrationType as any,
-        ntn: formData.ntn!,
-        cnic: formData.cnic!,
-        strn: formData.strn,
-        province: formData.province as any,
-        address: formData.address!,
-        status: 'Active',
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      onAdd(buyer);
-      setFormData({
-        name: '',
-        registrationType: REGISTRATION_TYPES[0],
-        ntn: '',
-        cnic: '',
-        strn: '',
-        province: PROVINCES[0],
-        address: ''
-      });
+      try {
+        const payload = {
+          buyerName: formData.buyerName,
+          registrationType: formData.registrationType,
+          ntn: formData.ntn,
+          cnic: formData.cnic,
+          strn: formData.strn,
+          province: formData.province,
+          fullAddress: formData.fullAddress,
+        };
+        
+        const { data } = await api.post('/buyers', payload);
+
+        onAdd();
+
+        // Reset form
+        setFormData({
+          buyerName: '',
+          registrationType: REGISTRATION_TYPES[0],
+          ntn: '',
+          cnic: '',
+          strn: '',
+          province: PROVINCES[0],
+          fullAddress: '',
+        });
+      } catch (err: any) {
+        alert(err.response?.data?.message || err.message || 'Failed to add buyer');
+      }
     }
   };
 
@@ -86,8 +92,8 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
               <Input 
                 label="Buyer Name *" 
                 placeholder="Enter buyer's legal name" 
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
+                value={formData.buyerName}
+                onChange={e => setFormData({...formData, buyerName: e.target.value})}
               />
             </div>
 
@@ -137,8 +143,8 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
                   rows={3}
                   placeholder="Street, Area, City"
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                  value={formData.address}
-                  onChange={e => setFormData({...formData, address: e.target.value})}
+                  value={formData.fullAddress}
+                  onChange={e => setFormData({...formData, fullAddress: e.target.value})}
                 />
               </div>
             </div>
@@ -150,7 +156,7 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
           <Button 
             className="flex-1 rounded-2xl shadow-lg shadow-indigo-500/20" 
             onClick={handleAdd}
-            disabled={!formData.name || !formData.ntn || !formData.cnic || !formData.address}
+            disabled={!formData.buyerName || !formData.ntn || !formData.cnic || !formData.fullAddress}
           >
             Save Buyer
           </Button>

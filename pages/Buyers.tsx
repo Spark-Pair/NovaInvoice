@@ -24,15 +24,18 @@ import { BuyerDetailsModal } from '../components/buyers/BuyerDetailsModal';
 import { BuyerFilterModal } from '../components/buyers/BuyerFilterModal';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Buyer } from '../types';
-
-const INITIAL_BUYERS: Buyer[] = [
-  { id: '1', name: 'Global Tech Corp', registrationType: 'Registered', ntn: '8877665-4', cnic: '42101-5555555-1', strn: '12-00-1122-334-55', province: 'PUNJAB', address: 'Plot 12, Industrial Area, Lahore', status: 'Active', createdAt: '2024-01-20' },
-  { id: '2', name: 'Greenway Retail', registrationType: 'Unregistered', ntn: '1122334-5', cnic: '42201-4444444-2', province: 'SINDH', address: 'Shop 4, Market Square, Karachi', status: 'Active', createdAt: '2024-02-15' },
-  { id: '3', name: 'Skyline Architects', registrationType: 'Registered', ntn: '5544332-1', cnic: '42301-3333333-3', province: 'CAPITAL TERRITORY', address: 'Blue Area, Islamabad', status: 'Inactive', createdAt: '2023-12-10' },
-];
+import api from '@/axios';
+import Loader from '@/components/Loader';
 
 const Buyers: React.FC = () => {
-  const [buyers, setBuyers] = useState<Buyer[]>(INITIAL_BUYERS);
+  const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [stats, setStats] = useState<any>({});
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTableLoading, setIsTableLoading] = useState(false);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -47,24 +50,51 @@ const Buyers: React.FC = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
-  const itemsPerPage = 50;
+  const itemsPerPage = 30;
 
-  const filteredBuyers = buyers.filter(buyer => {
-    const f = appliedFilters;
-    if (f.name && !buyer.name.toLowerCase().includes(f.name.toLowerCase())) return false;
-    if (f.registrationType && buyer.registrationType !== f.registrationType) return false;
-    if (f.province && buyer.province !== f.province) return false;
-    if (f.status && buyer.status !== f.status) return false;
-    if (f.ntn && !buyer.ntn.includes(f.ntn)) return false;
-    if (f.cnic && !buyer.cnic.includes(f.cnic)) return false;
-    if (f.dateFrom && buyer.createdAt < f.dateFrom) return false;
-    if (f.dateTo && buyer.createdAt > f.dateTo) return false;
-    return true;
-  });
+  useEffect(() => {
+    fetchBuyers(currentPage, true);
+  }, [currentPage, appliedFilters]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredBuyers.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedBuyers = filteredBuyers.slice(startIndex, startIndex + itemsPerPage);
+  const fetchBuyers = async (page = 1, showTableLoader = false) => {
+    try {
+      showTableLoader ? setIsTableLoading(true) : setIsLoading(true);
+
+      const params: any = {
+        page,
+        limit: itemsPerPage,
+        ...appliedFilters,
+      };
+
+      const { data } = await api.get("/buyers", { params });
+
+      const formatted = data.data.map((b: any) => ({
+        id: b._id,
+        name: b.buyerName,
+        registrationType: b.registrationType,
+        ntn: b.ntn,
+        cnic: b.cnic,
+        strn: b.strn,
+        province: b.province,
+        address: b.fullAddress,
+        status: b.isActive ? "Active" : "Inactive",
+        createdAt: new Date(b.createdAt).toISOString().split("T")[0],
+      }));
+
+      setBuyers(formatted);
+      setTotalPages(data.meta.totalPages);
+      setTotalRecords(data.meta.total);
+      setStats(data.stats);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+      setIsTableLoading(false);
+    }
+  };
+
+  const startRow = (currentPage - 1) * itemsPerPage + 1;
+  const endRow = Math.min(currentPage * itemsPerPage, totalRecords);
 
   const handlePageChange = (newPage: number) => {
     const page = Math.min(Math.max(1, newPage), totalPages);
@@ -72,8 +102,8 @@ const Buyers: React.FC = () => {
     setPageInput(page.toString());
   };
 
-  const handleAddBuyer = (buyer: Buyer) => {
-    setBuyers([buyer, ...buyers]);
+  const handleAddBuyer = () => {
+    handleClearFilters();
     setIsAddModalOpen(false);
   };
 
@@ -85,14 +115,27 @@ const Buyers: React.FC = () => {
 
   const toggleStatus = (buyer: Buyer) => {
     const newStatus = buyer.status === 'Active' ? 'Inactive' : 'Active';
+
     setConfirmationConfig({
       title: `${newStatus === 'Active' ? 'Activate' : 'Deactivate'} Buyer`,
       message: `Are you sure you want to set ${buyer.name} as ${newStatus}?`,
       type: newStatus === 'Active' ? 'info' : 'danger',
-      onConfirm: () => {
-        setBuyers(buyers.map(b => b.id === buyer.id ? { ...b, status: newStatus } : b));
-        setIsConfirmationOpen(false);
-      }
+
+      onConfirm: async () => {
+        try {
+          const { data } = await api.patch(
+            `/buyers/${buyer.id}/toggle-status`
+          );
+
+          setSelectedBuyer(prev => prev ? { ...prev, status: newStatus } : null);
+
+          handleApplyFilters();
+        } catch (err) {
+          console.error('Failed to toggle buyer status', err);
+        } finally {
+          setIsConfirmationOpen(false);
+        }
+      },
     });
     setIsConfirmationOpen(true);
   };
@@ -128,185 +171,206 @@ const Buyers: React.FC = () => {
           New Buyer
         </Button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="flex items-center gap-6 relative overflow-hidden">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
-            <Users size={32} />
-          </div>
-          <div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Total Buyers</p>
-            <h3 className="text-4xl font-black mt-1">{buyers.length}</h3>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-6 relative overflow-hidden">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
-            <Tag size={32} />
-          </div>
-          <div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Registered</p>
-            <h3 className="text-4xl font-black mt-1">{buyers.filter(b => b.registrationType === 'Registered').length}</h3>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-6 relative overflow-hidden">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
-            <MapPin size={32} />
-          </div>
-          <div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Regions</p>
-            <h3 className="text-4xl font-black mt-1">{new Set(buyers.map(b => b.province)).size}</h3>
-          </div>
-        </Card>
-      </div>
-
-      <Card className="overflow-hidden p-0 grow flex flex-col shadow-xl">
-        <div className="flex flex-wrap items-center justify-between p-5 gap-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#080C1C] p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
-              <button 
-                onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage - 1); }}
-                disabled={currentPage === 1}
-                className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <div className="flex items-center gap-2 px-2">
-                <span className="text-sm font-bold text-slate-400">Page</span>
-                <input 
-                  type="text"
-                  value={pageInput}
-                  onChange={(e) => setPageInput(e.target.value)}
-                  onBlur={() => handlePageChange(parseInt(pageInput))}
-                  onKeyDown={(e) => e.key === 'Enter' && handlePageChange(parseInt(pageInput))}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-12 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-black focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-                <span className="text-sm font-bold text-slate-400">of {totalPages}</span>
-              </div>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage + 1); }}
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
-              >
-                <ChevronRight size={18} />
-              </button>
+      
+      {isLoading ? (
+        <Loader />
+      ) : (
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="flex items-center gap-6 relative overflow-hidden">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
+              <Users size={32} />
             </div>
-          </div>
-          <div className="flex gap-4">
-            <Button 
-              variant={Object.keys(appliedFilters).length > 0 ? "primary" : "secondary"} 
-              icon={<Filter size={16} />} 
-              className={`rounded-xl h-11 transition-all ${Object.keys(appliedFilters).length > 0 ? 'ring-4 ring-indigo-500/10' : ''}`}
-              onClick={() => setIsFilterModalOpen(true)}
-            >
-              Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
-            </Button>
-            <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
-          </div>
+            <div>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Total Buyers</p>
+              <h3 className="text-4xl font-black mt-1">{totalRecords}</h3>
+            </div>
+          </Card>
+          <Card className="flex items-center gap-6 relative overflow-hidden">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
+              <Tag size={32} />
+            </div>
+            <div>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Buyers</p>
+              <h3 className="text-4xl font-black mt-1">{stats.activeTotal}</h3>
+            </div>
+          </Card>
+          <Card className="flex items-center gap-6 relative overflow-hidden">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-indigo-600 bg-indigo-50 dark:bg-slate-800/50`}>
+              <MapPin size={32} />
+            </div>
+            <div>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Provinces</p>
+              <h3 className="text-4xl font-black mt-1">{stats.activeProvinceTotal}</h3>
+            </div>
+          </Card>
         </div>
 
-        <div className="overflow-x-auto overflow-y-auto relative grow custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 z-20 bg-slate-50/90 dark:bg-[#080C1C] backdrop-blur-md">
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 text-xs font-black uppercase tracking-wider">
-                <th className="px-6 py-5">Buyer Name</th>
-                <th className="px-6 py-5">Identifiers</th>
-                <th className="px-6 py-5">Type</th>
-                <th className="px-6 py-5">Location</th>
-                <th className="px-6 py-5">Status</th>
-                <th className="px-6 py-5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-              {paginatedBuyers.map(buyer => (
-                <tr 
-                  key={buyer.id} 
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer"
-                  onClick={() => setSelectedBuyer(buyer)}
+        <Card className="overflow-hidden p-0 grow flex flex-col shadow-xl">
+          <div className="flex flex-wrap items-center justify-between p-5 gap-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#080C1C] p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage - 1); }}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
                 >
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden border border-white dark:border-slate-800 shadow-sm">
-                        {buyer.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{buyer.name}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">NTN: <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold tracking-normal">{buyer.ntn}</span></p>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CNIC: <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold tracking-normal">{buyer.cnic}</span></p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{buyer.registrationType}</span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-indigo-400" />
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{buyer.province}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      buyer.status === 'Active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                    }`}>
-                      {buyer.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 text-right relative overflow-visible">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveContextMenu(activeContextMenu === buyer.id ? null : buyer.id);
-                      }}
-                      className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all text-slate-400 hover:text-indigo-600 shadow-sm border border-transparent hover:border-slate-100"
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                    
-                    <AnimatePresence>
-                      {activeContextMenu === buyer.id && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                          className="absolute right-6 top-14 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 py-2 overflow-hidden text-left"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button onClick={() => {setSelectedBuyer(buyer); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                            <Eye size={14} /> View Profile
-                          </button>
-                          <button onClick={() => {setSelectedBuyer(buyer); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                            <Edit2 size={14} /> Edit Buyer
-                          </button>
-                          <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1 mx-2" />
-                          <button 
-                            onClick={() => { toggleStatus(buyer); setActiveContextMenu(null); }} 
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-colors uppercase tracking-widest ${
-                              buyer.status === 'Active' ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                            }`}
-                          >
-                            <Power size={14} /> {buyer.status === 'Active' ? 'Deactivate' : 'Activate'}
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredBuyers.length === 0 && (
-            <div className="py-20 flex flex-col items-center">
-              <EmptyState message="No buyers found matching your criteria." />
-              <Button variant="ghost" onClick={handleClearFilters} className="mt-2 text-xs font-bold uppercase tracking-widest">Reset All Filters</Button>
+                  <ChevronLeft size={18} />
+                </button>
+                <div className="flex items-center gap-2 px-2">
+                  <span className="text-sm font-bold text-slate-400">Page</span>
+                  <input 
+                    type="text"
+                    value={pageInput}
+                    onChange={(e) => setPageInput(e.target.value)}
+                    onBlur={() => handlePageChange(parseInt(pageInput))}
+                    onKeyDown={(e) => e.key === 'Enter' && handlePageChange(parseInt(pageInput))}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-12 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-black focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                  <span className="text-sm font-bold text-slate-400">of {totalPages}</span>
+                </div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handlePageChange(currentPage + 1); }}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 disabled:opacity-20 transition-all text-slate-600 dark:text-slate-400"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+
+              <div className="flex flex-col text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                <span>Rows per page: {itemsPerPage}</span>
+                <span className="text-slate-400 normal-case font-semibold tracking-normal">
+                  Showing {startRow}–{endRow} of {totalRecords}
+                </span>
+              </div>
             </div>
-          )}
-        </div>
-      </Card>
+            
+            <div className="flex gap-4">
+              <Button 
+                variant={Object.keys(appliedFilters).length > 0 ? "primary" : "secondary"} 
+                icon={<Filter size={16} />} 
+                className={`rounded-xl h-11 transition-all ${Object.keys(appliedFilters).length > 0 ? 'ring-4 ring-indigo-500/10' : ''}`}
+                onClick={() => setIsFilterModalOpen(true)}
+              >
+                Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
+              </Button>
+              <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto overflow-y-auto relative grow custom-scrollbar">
+            {isTableLoading && (
+              <div className="absolute inset-0 z-30 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm flex items-center justify-center">
+                <Loader size="sm" />
+              </div>
+            )}
+
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 z-20 bg-slate-50/90 dark:bg-[#080C1C] backdrop-blur-md">
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 text-xs font-black uppercase tracking-wider">
+                  <th className="px-6 py-5">Buyer Name</th>
+                  <th className="px-6 py-5">Identifiers</th>
+                  <th className="px-6 py-5">Type</th>
+                  <th className="px-6 py-5">Location</th>
+                  <th className="px-6 py-5">Status</th>
+                  <th className="px-6 py-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                {buyers.map(buyer => (
+                  <tr 
+                    key={buyer.id} 
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer"
+                    onClick={() => setSelectedBuyer(buyer)}
+                  >
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden border border-white dark:border-slate-800 shadow-sm">
+                          {buyer.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{buyer.name}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">NTN: <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold tracking-normal">{buyer.ntn}</span></p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CNIC: <span className="text-xs text-slate-700 dark:text-slate-300 font-mono font-bold tracking-normal">{buyer.cnic}</span></p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{buyer.registrationType}</span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={14} className="text-indigo-400" />
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{buyer.province}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                        buyer.status === 'Active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                      }`}>
+                        {buyer.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-right relative overflow-visible">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveContextMenu(activeContextMenu === buyer.id ? null : buyer.id);
+                        }}
+                        className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all text-slate-400 hover:text-indigo-600 shadow-sm border border-transparent hover:border-slate-100"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {activeContextMenu === buyer.id && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="absolute right-6 top-14 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 py-2 overflow-hidden text-left"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button onClick={() => {setSelectedBuyer(buyer); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                              <Eye size={14} /> View Profile
+                            </button>
+                            <button onClick={() => {setSelectedBuyer(buyer); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                              <Edit2 size={14} /> Edit Buyer
+                            </button>
+                            <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1 mx-2" />
+                            <button 
+                              onClick={() => { toggleStatus(buyer); setActiveContextMenu(null); }} 
+                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-colors uppercase tracking-widest ${
+                                buyer.status === 'Active' ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                              }`}
+                            >
+                              <Power size={14} /> {buyer.status === 'Active' ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {buyers.length === 0 && (
+              <div className="py-20 flex flex-col items-center">
+                <EmptyState message="No buyers found matching your criteria." />
+                <Button variant="ghost" onClick={handleClearFilters} className="mt-2 text-xs font-bold uppercase tracking-widest">Reset All Filters</Button>
+              </div>
+            )}
+          </div>
+        </Card>
+      </>
+      )}
 
       <AddBuyerModal 
         isOpen={isAddModalOpen} 

@@ -44,7 +44,6 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
     strn: '',
     province: PROVINCES[0],
     fullAddress: '',
-    status: 'Active',
     username: '',
     password: ''
   });
@@ -84,8 +83,6 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
           username: formData.username,
           password: formData.password,
         };
-
-        // console.log(payload);
 
         const { data } = await api.post('/entities', payload);
         

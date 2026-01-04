@@ -54,11 +54,7 @@ const Entities: React.FC = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
-  const itemsPerPage = 1;
-
-  // useEffect(() => {
-  //   fetchEntities(currentPage);
-  // }, []);
+  const itemsPerPage = 30;
 
   useEffect(() => {
     fetchEntities(currentPage, true);
@@ -83,11 +79,7 @@ const Entities: React.FC = () => {
 
   const fetchEntities = async (page = 1, showTableLoader = false) => {
     try {
-      if (showTableLoader) {
-        setIsTableLoading(true);
-      } else {
-        setIsLoading(true);
-      }
+      showTableLoader ? setIsTableLoading(true) : setIsLoading(true);
 
       const filterParams = buildFilterParams();
 
@@ -126,47 +118,6 @@ const Entities: React.FC = () => {
     }
   };
 
-  // const fetchEntities = async (page = 1, showTableLoader = false) => {
-  //   try {
-  //     if (showTableLoader) {
-  //       setIsTableLoading(true);
-  //     } else {
-  //       setIsLoading(true);
-  //     }
-
-  //     const { data } = await api.get('/entities', {
-  //       params: {
-  //         page,
-  //         limit: itemsPerPage,
-  //       }
-  //     });
-
-  //     const formattedEntities = data.data.map((e: any) => ({
-  //       id: e._id,
-  //       businessName: e.businessName,
-  //       registrationType: e.registrationType,
-  //       ntn: e.ntn,
-  //       cnic: e.cnic,
-  //       strn: e.strn,
-  //       province: e.province,
-  //       fullAddress: e.fullAddress,
-  //       status: e.isActive ? 'Active' : 'Inactive',
-  //       createdAt: new Date(e.createdAt).toISOString().split('T')[0],
-  //       username: e.user?.username || '',
-  //       logoUrl: e.image || undefined,
-  //     }));
-
-  //     setEntities(formattedEntities);
-  //     setTotalPages(data.meta.totalPages);
-  //     setTotalRecords(data.meta.total);
-  //   } catch (err) {
-  //     console.error(err);
-  //   } finally {
-  //     setIsLoading(false);
-  //     setIsTableLoading(false);
-  //   }
-  // };
-
   const startRow = (currentPage - 1) * itemsPerPage + 1;
   const endRow = Math.min(currentPage * itemsPerPage, totalRecords);
 
@@ -175,7 +126,6 @@ const Entities: React.FC = () => {
 
     setCurrentPage(newPage);
     setPageInput(newPage.toString());
-    fetchEntities(newPage, true); // 👈 table loader
   };
 
   const handleAddEntity = () => {
@@ -204,17 +154,6 @@ const Entities: React.FC = () => {
           );
 
           setSelectedEntity(prev => prev ? { ...prev, status: newStatus } : null);
-
-          // setEntities(prev =>
-          //   prev.map(e =>
-          //     e.id === entity.id
-          //       ? {
-          //           ...e,
-          //           status: data.entity.isActive ? 'Active' : 'Inactive',
-          //         }
-          //       : e
-          //   )
-          // );
 
           handleApplyFilters();
         } catch (err) {
@@ -309,7 +248,7 @@ const Entities: React.FC = () => {
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Active Provinces</p>
-              <h3 className="text-4xl font-black mt-1">{stats.activeProvincesTotal}</h3>
+              <h3 className="text-4xl font-black mt-1">{stats.activeProvinceTotal}</h3>
             </div>
           </Card>
         </div>
@@ -471,7 +410,7 @@ const Entities: React.FC = () => {
                                 entity.status === 'Active' ? 'text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20' : 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
                               }`}
                             >
-                              <Power size={14} /> {entity.status === 'Active' ? 'Set Inactive' : 'Set Active'}
+                              <Power size={14} /> {entity.status === 'Active' ? 'Deactivate' : 'Activate'}
                             </button>
                           </motion.div>
                         )}

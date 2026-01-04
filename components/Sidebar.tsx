@@ -19,6 +19,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { User, Theme } from '../types';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   user: User;
@@ -27,15 +28,15 @@ interface SidebarProps {
   toggleTheme: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, theme, toggleTheme }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onLogout, theme, toggleTheme }) => {
+  const { user, isAuthorized } = useAuth();
+
   const location = useLocation();
   const [showProfileActions, setShowProfileActions] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isAuthorized = (allowedRoles = []) => allowedRoles.includes(user.role);
-
   const menuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard', show: isAuthorized(['admin']) },
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin-dashboard', show: isAuthorized(['admin']) },
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard', show: isAuthorized(['client']) },
     
     { icon: <Building2 size={20} />, label: 'Entities', path: '/entities', show: isAuthorized(['admin']) },
@@ -43,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, theme, toggleT
     { icon: <Users size={20} />, label: 'Buyers', path: '/buyers', show: isAuthorized(['client']) },
     { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices', show: isAuthorized(['client']) },
 
-    { icon: <Settings size={20} />, label: 'Settings', path: '/settings', show: isAuthorized(['admin']) },
+    { icon: <Settings size={20} />, label: 'Settings', path: '/admin-settings', show: isAuthorized(['admin']) },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings', show: isAuthorized(['client']) },
   ];
 

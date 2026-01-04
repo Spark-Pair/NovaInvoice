@@ -14,9 +14,10 @@ import Entities from './pages/Entities';
 import Buyers from './pages/Buyers';
 import Invoices from './pages/Invoices';
 import Settings from './pages/Settings';
+import NotAuthorized from './pages/NotAuthorized';
 
 export default function App() {
-  const { user, login, logout } = useAuth();
+  const { user, login, logout, isAuthorized } = useAuth();
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
 
   useEffect(() => {
@@ -42,26 +43,35 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" />} />
             </>
           ) : (
-            <Route
-              path="*"
-              element={
-                <div className="flex bg-slate-50 dark:bg-[#080C1C] text-slate-900 dark:text-slate-100 transition-colors duration-300 dotted-bg">
-                  <Sidebar user={user} onLogout={logout} theme={theme} toggleTheme={toggleTheme} />
-                  <main className="flex-1 ml-72 min-h-screen">
-                    <div className={`p-8 pb-5 h-screen`}>
-                      <Routes>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/entities" element={<Entities />} />
-                        <Route path="/buyers" element={<Buyers />} />
-                        <Route path="/invoices" element={<Invoices />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="*" element={<Navigate to="/dashboard" />} />
-                      </Routes>
-                    </div>
-                  </main>
-                </div>
-              }
-            />
+            <>
+              <Route path="/not-authorized" element={<NotAuthorized />} />
+              <Route
+                path="*"
+                element={
+                  <div className="flex bg-slate-50 dark:bg-[#080C1C] text-slate-900 dark:text-slate-100 transition-colors duration-300 dotted-bg">
+                    <Sidebar user={user} onLogout={logout} theme={theme} toggleTheme={toggleTheme} />
+                    <main className="flex-1 ml-72 min-h-screen">
+                      <div className={`p-8 pb-5 h-screen`}>
+                        <Routes>
+                          <Route path="/admin-dashboard" element={ isAuthorized(['admin']) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/dashboard" element={ isAuthorized(['client']) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
+
+                          <Route path="/entities" element={ isAuthorized(['admin']) ? <Entities /> : <Navigate to="/not-authorized" /> } />
+
+                          <Route path="/buyers" element={ isAuthorized(['client']) ? <Buyers /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/invoices" element={ isAuthorized(['client']) ? <Invoices /> : <Navigate to="/not-authorized" /> } />
+
+                          <Route path="/admin-settings" element={ isAuthorized(['admin']) ? <Settings /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/settings" element={ isAuthorized(['client']) ? <Settings /> : <Navigate to="/not-authorized" /> } />
+
+                          <Route path="*" element={ <Navigate to={ isAuthorized(['admin']) ? "/admin-dashboard" : isAuthorized(['client']) ? "/dashboard" : "" } /> } />
+                        </Routes>
+                      </div>
+                    </main>
+                  </div>
+                }
+              />
+            </>
           )}
         </Routes>
       </div>

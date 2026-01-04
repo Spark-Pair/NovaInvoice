@@ -181,7 +181,7 @@ export const EntityDetailsModal: React.FC<EntityDetailsModalProps> = ({
               }`}
               onClick={onToggleStatus}
             >
-              {entity.status === 'Active' ? 'Inactive' : 'Active'}
+              {entity.status === 'Active' ? 'Deactivate' : 'Activate'}
             </Button>
           </div>
           

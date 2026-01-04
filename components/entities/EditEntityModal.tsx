@@ -79,8 +79,6 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClos
           fullAddress: formData.fullAddress,
         };
 
-        console.log(payload);
-
         // 🔥 Update API call
         // const { data } = await api.put(`/entities/${entity.id}`, payload);
         // or PATCH if your backend uses patch:
@@ -97,7 +95,6 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClos
           fullAddress: data.entity.fullAddress,
           logoUrl: data.entity.image || undefined,
           status: data.entity.status || 'Active',
-          createdAt: new Date(data.entity.createdAt).toISOString().split('T')[0],
           username: data.entity.user?.username,
         });
 
