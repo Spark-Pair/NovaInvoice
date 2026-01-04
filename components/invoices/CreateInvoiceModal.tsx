@@ -1,12 +1,13 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
 import { Select } from '../Select';
-import { Invoice, InvoiceItem, Buyer } from '../../types';
+import { InvoiceItem, Buyer } from '../../types';
 import { Plus, Trash2, UserPlus, Calculator, ShoppingCart, FileText, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '@/axios';
 
 // Fix: Use 'as const' to ensure these values are treated as specific literals rather than just strings
 const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Credit Note', 'Debit Note'] as const;
@@ -1016,14 +1017,13 @@ const SRO_SERIAL_OPTIONS = [
 interface CreateInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (invoice: Invoice) => void;
+  onAdd: (invoice) => void;
   nextInvoiceNumber: string;
   buyers: Buyer[];
   onAddNewBuyer: () => void;
 }
 
-const INITIAL_ITEM: InvoiceItem = {
-  id: '',
+const INITIAL_ITEM = {
   hsCode: '',
   description: '',
   saleType: SALE_TYPES[0],
@@ -1031,54 +1031,71 @@ const INITIAL_ITEM: InvoiceItem = {
   uom: UOM_OPTIONS[0],
   rate: 0,
   unitPrice: 0,
-  salesValueExclTax: 0,
+  salesValue: 0,
   salesTax: 0,
   discount: 0,
   otherDiscount: 0,
-  taxWithheld: 0,
+  salesTaxWithheld: 0,
   extraTax: 0,
   furtherTax: 0,
-  fedPayable: 0,
+  federalExciseDuty: 0,
   t236g: 0,
   t236h: 0,
   tradeDiscount: 0,
   fixedValue: 0,
-  totalItemValue: 0,
-  sroSchedule: SRO_SCHEDULE_OPTIONS[0],
-  sroItemSerial: SRO_SERIAL_OPTIONS[0]
+  sroScheduleNo: SRO_SCHEDULE_OPTIONS[0],
+  sroItemSerialNo: SRO_SERIAL_OPTIONS[0],
+  totalItemValue: 0
 };
 
 export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ 
   isOpen, 
   onClose, 
   onAdd, 
-  nextInvoiceNumber,
-  buyers,
   onAddNewBuyer
 }) => {
-  const [invoiceData, setInvoiceData] = useState<Partial<Invoice>>({
-    number: nextInvoiceNumber,
-    issueDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    // Fix: properly type the default document type
+  const [buyers, setBuyers] = useState([]);
+  const [selectedBuyer, setSelectedBuyer] = useState(null);
+  const [invoiceData, setInvoiceData] = useState({
+    invoiceNumber: '',
+    date: new Date().toISOString().split('T')[0],
     documentType: DOCUMENT_TYPES[0],
     salesman: '',
     referenceNumber: '',
     buyerId: '',
-    items: [{ ...INITIAL_ITEM, id: Math.random().toString() }]
+    items: [{ ...INITIAL_ITEM }]
   });
 
-  const selectedBuyer = useMemo(() => 
-    buyers.find(b => b.id === invoiceData.buyerId), 
-    [invoiceData.buyerId, buyers]
-  );
+  useEffect(() => {
+    fetchBuyers();
+  }, [])
 
-  const calculateItem = (item: InvoiceItem): InvoiceItem => {
+  const fetchBuyers = async () => {
+    const { data } = await api.get("/invoices/buyers");
+    setBuyers(data.buyers);
+  }
+
+  useEffect(() => {
+    if (!invoiceData.buyerId) return;
+
+    const fetchBuyerDetails = async () => {
+      try {
+        const { data } = await api.get(`/invoices/buyers/${invoiceData.buyerId}`);
+        setSelectedBuyer(data.buyer); // store the detailed info
+      } catch (err) {
+        console.error("Failed to fetch buyer details:", err);
+      }
+    };
+
+    fetchBuyerDetails();
+  }, [invoiceData.buyerId]);
+
+  const calculateItem = (item) => {
     const valueExcl = item.quantity * item.unitPrice;
     
     const total = valueExcl + item.salesTax - item.discount - item.otherDiscount - 
-                  item.taxWithheld + item.extraTax + item.furtherTax + 
-                  item.fedPayable + item.t236g + item.t236h - item.tradeDiscount;
+                  item.salesTaxWithheld + item.extraTax + item.furtherTax + 
+                  item.federalExciseDuty + item.t236g + item.t236h - item.tradeDiscount;
 
     return {
       ...item,
@@ -1087,7 +1104,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     };
   };
 
-  const updateItem = (id: string, updates: Partial<InvoiceItem>) => {
+  const updateItem = (id: string, updates) => {
     const newItems = (invoiceData.items || []).map(item => {
       if (item.id === id) {
         return calculateItem({ ...item, ...updates });
@@ -1118,17 +1135,19 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     [invoiceData.items]
   );
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!invoiceData.buyerId || !invoiceData.items?.length) return;
+
+    const { data } = await api.post('/invoices', invoiceData);
     
-    const invoice: Invoice = {
-      ...invoiceData as Invoice,
-      id: Math.random().toString(36).substr(2, 9),
-      entityId: '1', 
-      status: 'Pending',
-      total: totalInvoiceValue
-    };
-    onAdd(invoice);
+    // const invoice: Invoice = {
+    //   ...invoiceData as Invoice,
+    //   id: Math.random().toString(36).substr(2, 9),
+    //   entityId: '1', 
+    //   status: 'Pending',
+    //   total: totalInvoiceValue
+    // };
+    // onAdd(invoice);
   };
 
   return (
@@ -1144,17 +1163,17 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Invoice Information</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Input label="Invoice Number *" value={invoiceData.number} onChange={e => setInvoiceData({...invoiceData, number: e.target.value})} />
+            <Input label="Invoice Number *" placeholder="Invoice Number" value={invoiceData.invoiceNumber} onChange={e => setInvoiceData({...invoiceData, invoiceNumber: e.target.value})} />
             <Input label="Invoice Date *" type="date" value={invoiceData.issueDate} onChange={e => setInvoiceData({...invoiceData, issueDate: e.target.value})} />
             <Input label="Reference Number" placeholder="Optional" value={invoiceData.referenceNumber} onChange={e => setInvoiceData({...invoiceData, referenceNumber: e.target.value})} />
-            <Input label="Salesman" placeholder="Name" value={invoiceData.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
+            <Input label="Salesman" placeholder="Salesman" value={invoiceData.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
             <div className="col-span-2">
               {/* Fix: casting the Select value change to satisfy the strict union type of Invoice['documentType'] */}
               <Select 
                 label="Document Type" 
                 options={[...DOCUMENT_TYPES]} 
                 value={invoiceData.documentType || DOCUMENT_TYPES[0]} 
-                onChange={val => setInvoiceData({...invoiceData, documentType: val as Invoice['documentType']})} 
+                onChange={val => setInvoiceData({...invoiceData, documentType: val})} 
               />
             </div>
           </div>
@@ -1176,11 +1195,11 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
           
           <Select 
             placeholder="Select a registered buyer..."
-            options={buyers.map(b => b.name)}
-            value={selectedBuyer?.name || ''}
+            options={buyers.map(b => b.buyerName)}
+            value={selectedBuyer?.buyerName || ''}
             onChange={val => {
-              const b = buyers.find(x => x.name === val);
-              setInvoiceData({...invoiceData, buyerId: b?.id || ''});
+              const b = buyers.find(x => x.buyerName === val);
+              setInvoiceData({...invoiceData, buyerId: b?._id || ''});
             }}
           />
 
@@ -1195,7 +1214,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                 { label: 'STRN', val: selectedBuyer.strn || 'Unregistered' },
                 { label: 'Type', val: selectedBuyer.registrationType },
                 { label: 'Region', val: selectedBuyer.province },
-                { label: 'Address', val: selectedBuyer.address, full: true }
+                { label: 'Address', val: selectedBuyer.fullAddress, full: true }
               ].map((info, idx) => (
                 <div key={idx} className={info.full ? 'w-full pt-2 border-t border-slate-200 dark:border-slate-800' : ''}>
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{info.label}</p>
@@ -1222,7 +1241,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
           <div className="space-y-6">
             {(invoiceData.items || []).map((item, index) => (
-              <div key={item.id} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative group">
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative group">
                 <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
                   Item {index + 1}
                 </div>
@@ -1266,25 +1285,25 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                      readOnly 
                      label="Sales Value (Excl. Tax)" 
                      className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500"
-                     value={item.salesValueExclTax.toFixed(2)} 
+                     value={item.salesValue} 
                    />
                    <Input label="Sales Tax Applicable" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: parseFloat(e.target.value) || 0 })} />
                    <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: parseFloat(e.target.value) || 0 })} />
                    
                    <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.taxWithheld} onChange={e => updateItem(item.id, { taxWithheld: parseFloat(e.target.value) || 0 })} />
+                   <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: parseFloat(e.target.value) || 0 })} />
                    <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: parseFloat(e.target.value) || 0 })} />
                    
                    <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.fedPayable} onChange={e => updateItem(item.id, { fedPayable: parseFloat(e.target.value) || 0 })} />
+                   <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: parseFloat(e.target.value) || 0 })} />
                    <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: parseFloat(e.target.value) || 0 })} />
                    
                    <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: parseFloat(e.target.value) || 0 })} />
                    <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: parseFloat(e.target.value) || 0 })} />
                    <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: parseFloat(e.target.value) || 0 })} />
                    
-                   <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroSchedule || SRO_SCHEDULE_OPTIONS[0]} onChange={val => updateItem(item.id, { sroSchedule: val })} />
-                   <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerial || SRO_SERIAL_OPTIONS[0]} onChange={val => updateItem(item.id, { sroItemSerial: val })} />
+                   <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo || SRO_SCHEDULE_OPTIONS[0]} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
+                   <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo || SRO_SERIAL_OPTIONS[0]} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />
                    
                    <Input 
                      readOnly 

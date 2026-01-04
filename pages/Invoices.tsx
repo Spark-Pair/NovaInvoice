@@ -124,7 +124,7 @@ const Invoices: React.FC = () => {
   };
 
   const handleAddBuyer = (buyer: Buyer) => {
-    setBuyers([buyer, ...buyers]);
+    // handleClearFilters();
     setIsBuyerModalOpen(false);
     setIsModalOpen(true);
   };
@@ -155,8 +155,6 @@ const Invoices: React.FC = () => {
     Overdue: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
     Draft: 'bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400',
   };
-
-  const nextInvoiceNumber = `INV-${new Date().getFullYear()}-${String(invoices.length + 1).padStart(3, '0')}`;
 
   return (
     <>
@@ -370,9 +368,7 @@ const Invoices: React.FC = () => {
       <CreateInvoiceModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onAdd={handleAddInvoice} 
-        nextInvoiceNumber={nextInvoiceNumber}
-        buyers={buyers}
+        onAdd={handleAddInvoice}
         onAddNewBuyer={() => {
           setIsModalOpen(false);
           setIsBuyerModalOpen(true);
