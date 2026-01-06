@@ -164,7 +164,7 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice, entity,
                         {item.quantity} <span className="text-[10px] text-slate-400 font-black uppercase">{item.uom}</span>
                       </td>
                       <td className="px-6 py-5 text-right font-medium">{item.unitPrice.toLocaleString()}</td>
-                      <td className="px-6 py-5 text-right font-medium">{item.salesValueExclTax.toLocaleString()}</td>
+                      <td className="px-6 py-5 text-right font-medium">{item.salesValue.toLocaleString()}</td>
                       <td className="px-6 py-5 text-right font-bold text-indigo-500">{item.salesTax.toLocaleString()}</td>
                       <td className="px-6 py-5 text-right font-black text-slate-900 dark:text-white">{item.totalItemValue.toLocaleString()}</td>
                     </tr>
@@ -211,7 +211,7 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice, entity,
               <div className="px-6 py-4 rounded-3xl bg-indigo-600 text-white flex justify-between items-center shadow-xl shadow-indigo-500/20">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Grand Total</p>
-                  <p className="text-3xl font-black tracking-tighter">{currencySymbol}{invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <p className="text-3xl font-black tracking-tighter">{currencySymbol}{invoice.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                 </div>
                 <CreditCard size={32} className="opacity-20" />
               </div>

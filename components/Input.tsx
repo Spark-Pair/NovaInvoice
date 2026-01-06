@@ -1,9 +1,9 @@
 
 import React from 'react';
 
-export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label?: string, icon?: React.ReactNode }> = ({ label, icon, className = '', ...props }) => (
+export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label?: string, specialLabel?: string, icon?: React.ReactNode }> = ({ label, specialLabel, icon, className = '', ...props }) => (
   <div className="flex flex-col gap-1.5 w-full">
-    {label && <label className="text-sm font-semibold text-slate-500 ml-1">{label}</label>}
+    {label && <label className="text-sm font-semibold text-slate-500 ml-1">{label} {specialLabel && <span className="text-xs text-indigo-600 ml-1">{ specialLabel }</span>}</label>}
     <div className="relative group">
       {icon && (
         <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-indigo-500">

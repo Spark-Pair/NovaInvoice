@@ -468,7 +468,7 @@ const Entities: React.FC = () => {
         onConfirm={confirmationConfig.onConfirm}
         title={confirmationConfig.title}
         message={confirmationConfig.message}
-        type={confirmationConfig.type as any}
+        type={confirmationConfig.type}
       />
 
       <EntityDetailsModal

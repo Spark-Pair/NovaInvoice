@@ -1029,7 +1029,7 @@ const INITIAL_ITEM = {
   saleType: SALE_TYPES[0],
   quantity: 1,
   uom: UOM_OPTIONS[0],
-  rate: 0,
+  rate: RATE_OPTIONS[0],
   unitPrice: 0,
   salesValue: 0,
   salesTax: 0,
@@ -1090,34 +1090,73 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     fetchBuyerDetails();
   }, [invoiceData.buyerId]);
 
-  const calculateItem = (item) => {
-    const valueExcl = item.quantity * item.unitPrice;
-    
-    const total = valueExcl + item.salesTax - item.discount - item.otherDiscount - 
-                  item.salesTaxWithheld + item.extraTax + item.furtherTax + 
-                  item.federalExciseDuty + item.t236g + item.t236h - item.tradeDiscount;
+  const num = (v: any) => Number(v) || 0;
+
+  const extractPercent = (rate: string) =>
+    parseFloat(rate.replace('%', '')) || 0;
+
+  const calculateSalesTax = (salesValue: number, rate: number) => {
+    return (salesValue * rate) / 100;
+  };
+
+  const calculateItem = (item, recalcSalesTax = false) => {
+    const quantity = num(item.quantity);
+    const unitPrice = num(item.unitPrice);
+
+    const salesValue = quantity * unitPrice;
+
+    const salesTax = recalcSalesTax
+      ? calculateSalesTax(salesValue, extractPercent(item.rate))
+      : 0;
+
+    const totalItemValue =
+      salesValue +
+      salesTax +
+      num(item.extraTax) +
+      num(item.furtherTax) +
+      num(item.federalExciseDuty) +
+      num(item.t236g) +
+      num(item.t236h) -
+      num(item.discount) -
+      num(item.otherDiscount) -
+      num(item.salesTaxWithheld) -
+      num(item.tradeDiscount);
 
     return {
       ...item,
-      salesValueExclTax: valueExcl,
-      totalItemValue: total
+      salesValue,
+      salesTax,
+      totalItemValue,
     };
   };
 
   const updateItem = (id: string, updates) => {
-    const newItems = (invoiceData.items || []).map(item => {
-      if (item.id === id) {
-        return calculateItem({ ...item, ...updates });
-      }
-      return item;
-    });
-    setInvoiceData({ ...invoiceData, items: newItems });
+    setInvoiceData(prev => ({
+      ...prev,
+      items: (prev.items || []).map(item => {
+        if (item.id !== id) return item;
+
+        const updatedItem = { ...item, ...updates };
+
+        const rateHasPercentage =
+          typeof updatedItem.rate === 'string' &&
+          updatedItem.rate.trim().endsWith('%');
+
+        const shouldRecalcSalesTax =
+          rateHasPercentage &&
+          ('rate' in updates ||
+            'quantity' in updates ||
+            'unitPrice' in updates);
+
+        return calculateItem(updatedItem, shouldRecalcSalesTax);
+      }),
+    }));
   };
 
   const addItem = () => {
     setInvoiceData({
       ...invoiceData,
-      items: [...(invoiceData.items || []), { ...INITIAL_ITEM, id: Math.random().toString() }]
+      items: [...(invoiceData.items || []), { ...INITIAL_ITEM}]
     });
   };
 
@@ -1140,14 +1179,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
     const { data } = await api.post('/invoices', invoiceData);
     
-    // const invoice: Invoice = {
-    //   ...invoiceData as Invoice,
-    //   id: Math.random().toString(36).substr(2, 9),
-    //   entityId: '1', 
-    //   status: 'Pending',
-    //   total: totalInvoiceValue
-    // };
-    // onAdd(invoice);
+    onAdd();
   };
 
   return (
@@ -1210,7 +1242,8 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
               className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 flex flex-wrap gap-x-8 gap-y-4"
             >
               {[
-                { label: 'NTN', val: selectedBuyer.ntn },
+                { label: 'NTN', val: selectedBuyer.ntn || '-' },
+                { label: 'CNIC', val: selectedBuyer.cnic || '-' },
                 { label: 'STRN', val: selectedBuyer.strn || 'Unregistered' },
                 { label: 'Type', val: selectedBuyer.registrationType },
                 { label: 'Region', val: selectedBuyer.province },
@@ -1269,48 +1302,46 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
-                    <Select label="UOM *" options={UOM_OPTIONS} value={item.uom} onChange={val => updateItem(item.id, { uom: val })} />
-                    <Select 
-                      label="Rate *" 
-                      options={RATE_OPTIONS} 
-                      value={item.rate === 0.002 ? "0.20%" : item.rate === 0 ? "0.00%" : "Select rate..."} 
-                      onChange={val => {
-                        const numRate = val === "0.20%" ? 0.002 : 0;
-                        updateItem(item.id, { rate: numRate });
-                      }} 
-                    />
-                    <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: parseFloat(e.target.value) || 0 })} />
+                  <Select label="UOM *" options={UOM_OPTIONS} value={item.uom} onChange={val => updateItem(item.id, { uom: val })} />
+                  <Select 
+                    label="Rate *" 
+                    options={RATE_OPTIONS} 
+                    value={item.rate} 
+                    onChange={val => { updateItem(item.id, { rate: val }) }} 
+                  />
+                  <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: parseFloat(e.target.value) || 0 })} />
 
-                   <Input 
-                     readOnly 
-                     label="Sales Value (Excl. Tax)" 
-                     className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500"
-                     value={item.salesValue} 
-                   />
-                   <Input label="Sales Tax Applicable" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: parseFloat(e.target.value) || 0 })} />
-                   
-                   <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: parseFloat(e.target.value) || 0 })} />
-                   
-                   <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: parseFloat(e.target.value) || 0 })} />
-                   <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: parseFloat(e.target.value) || 0 })} />
-                   
-                   <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: parseFloat(e.target.value) || 0 })} />
-                   <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: parseFloat(e.target.value) || 0 })} />
-                   
-                   <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo || SRO_SCHEDULE_OPTIONS[0]} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
-                   <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo || SRO_SERIAL_OPTIONS[0]} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />
-                   
-                   <Input 
-                     readOnly 
-                     label="Total Item Value" 
-                     className="bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-600 font-bold"
-                     value={item.totalItemValue.toFixed(2)} 
-                   />
+                  <Input 
+                    readOnly 
+                    label="Sales Value (Excl. Tax)"
+                    specialLabel="Auto-Calc"
+                    className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500"
+                    value={item.salesValue} 
+                  />
+                  <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: parseFloat(e.target.value) || 0 })} />
+                  
+                  <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: parseFloat(e.target.value) || 0 })} />
+                  
+                  <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: parseFloat(e.target.value) || 0 })} />
+                  <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: parseFloat(e.target.value) || 0 })} />
+                  
+                  <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: parseFloat(e.target.value) || 0 })} />
+                  
+                  <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
+                  <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />
+                  
+                  <Input 
+                    readOnly 
+                    label="Total Item Value" 
+                    className="bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-600 font-bold"
+                    value={item.totalItemValue.toFixed(2)} 
+                  />
                 </div>
               </div>
             ))}

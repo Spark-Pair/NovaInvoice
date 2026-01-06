@@ -6,9 +6,7 @@ import { Button } from '../Button';
 import { Input } from '../Input';
 import { Select } from '../Select';
 
-// Fix: Included 'Purchase Invoice' to align with the expanded documentType union in types.ts
 const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Debit Note', 'Credit Note'];
-const STATUS_OPTIONS = ['Paid', 'Pending', 'Overdue', 'Draft'];
 
 interface InvoiceFilterModalProps {
   isOpen: boolean;
@@ -80,8 +78,8 @@ export const InvoiceFilterModal: React.FC<InvoiceFilterModalProps> = ({
                     <Input 
                       label="Invoice Number" 
                       placeholder="INV-2024..." 
-                      value={filters.number || ''}
-                      onChange={(e) => updateFilter('number', e.target.value)}
+                      value={filters.invoiceNumber || ''}
+                      onChange={(e) => updateFilter('invoiceNumber', e.target.value)}
                     />
                     <Input 
                       label="Buyer Name" 
@@ -105,13 +103,6 @@ export const InvoiceFilterModal: React.FC<InvoiceFilterModalProps> = ({
                       value={filters.documentType || ''}
                       onChange={(val) => updateFilter('documentType', val)}
                       placeholder="All Types"
-                    />
-                    <Select 
-                      label="Payment Status"
-                      options={STATUS_OPTIONS}
-                      value={filters.status || ''}
-                      onChange={(val) => updateFilter('status', val)}
-                      placeholder="Any Status"
                     />
                   </div>
                 </div>
