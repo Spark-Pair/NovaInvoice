@@ -127,6 +127,7 @@ const Invoices: React.FC = () => {
         salesman: invoice.salesman,
         referenceNumber: invoice.referenceNumber,
         buyer: invoice.buyer,
+        relatedEntity: invoice.relatedEntity,
         items: invoice.items,
         isSent: invoice.isSent,
         totalValue: invoice.totalValue
@@ -402,13 +403,7 @@ const Invoices: React.FC = () => {
                                   <Eye size={14} /> View Document
                                 </button>
                                 <button onClick={() => {setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                                  <Download size={14} /> Download PDF
-                                </button>
-                                <button onClick={() => {setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                   <Send size={14} /> Send to FBR
-                                </button>
-                                <button onClick={() => {setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                                  <Printer size={14} /> Print
                                 </button>
                                 
                                 {!inv.isSent && (

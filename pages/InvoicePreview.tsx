@@ -83,72 +83,206 @@ const invoice = {
 
 /* ---------------- PDF STYLES ---------------- */
 const pdfStyles = StyleSheet.create({
-  page: { padding: 32, fontSize: 10, fontFamily: 'Helvetica', lineHeight: 1.4 },
-  header: { marginBottom: 24 },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  page: { padding: 16, fontSize: 8, fontFamily: 'Helvetica', lineHeight: 1.4 },
+  title: { fontSize: 14, fontWeight: 'bold', textAlign: 'center' },
+  hr: { borderBottom: '1 solid #000', marginVertical: 16 },
+  row: { flexDirection: 'row' },
+  rowLabel: { fontWeight: 'bold', marginRight: 4 },
   section: { marginBottom: 16 },
-  label: { fontSize: 8, color: '#666', textTransform: 'uppercase', marginBottom: 4 },
-  value: { fontSize: 10, fontWeight: 'bold' },
-  tableHeader: { flexDirection: 'row', borderBottom: '1 solid #000', paddingBottom: 6, marginBottom: 6 },
-  tableRow: { flexDirection: 'row', paddingVertical: 4, borderBottom: '0.5 solid #ddd' },
+  label: { fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
+  value: { fontSize: 8, fontWeight: 'bold' },
+  table: {  },
+  tableHeader: { borderTop: '0.5 solid #000', fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', borderBottom: '0.5 solid #000' },
+  firstColumn: { borderLeft: '0.5 solid #000' },
+  column: { flex: 1, borderRight: '0.5 solid #000', textAlign: 'center', padding: 4 },
   colDesc: { width: '40%' },
   colQty: { width: '10%', textAlign: 'center' },
   colPrice: { width: '15%', textAlign: 'right' },
   colTax: { width: '15%', textAlign: 'right' },
   colTotal: { width: '20%', textAlign: 'right' },
-  totals: { marginTop: 20, alignItems: 'flex-end' },
+  totalsWrapper: { marginTop: 20, alignItems: 'flex-end' },
+  totals: { border: '1 solid #000', padding: 8 },
+  totalHeading: { fontWeight: 'bold', fontSize: 12, marginHorizontal: 'auto', marginBottom: 8 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', width: 200 },
-  grandTotal: { fontSize: 14, fontWeight: 'bold' },
+  grandTotal: { fontWeight: 'bold' },
 });
 
 /* ---------------- PDF DOCUMENT ---------------- */
-const InvoiceDocument = () => (
+const InvoiceDocument = ({invoice, entity, buyer}) => (
   <Document>
+    {console.log({invoice})}
+    
     <Page size="A4" style={pdfStyles.page}>
-      <View style={pdfStyles.header}>
-        <Text style={pdfStyles.title}>{invoice.documentType}</Text>
-        <Text>Invoice #: {invoice.number}</Text>
-        <Text>Date: {invoice.issueDate}</Text>
+      <View>
+        <Text style={pdfStyles.title}>SALES TAX INVOICE</Text>
       </View>
 
-      <View style={[pdfStyles.row, pdfStyles.section]}>
+      <View style={pdfStyles.hr} />
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <View>
-          <Text style={pdfStyles.label}>From</Text>
-          <Text style={pdfStyles.value}>{entity.businessName}</Text>
-          <Text>{entity.fullAddress}</Text>
-          <Text>NTN: {entity.ntn}</Text>
+          <Text style={pdfStyles.label}>SELLER</Text>
+
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Business Name:</Text>
+            <Text>{invoice.relatedEntity.businessName || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>NTN:</Text>
+            <Text>{invoice.relatedEntity.ntn || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>CNIC:</Text>
+            <Text>{invoice.relatedEntity.cnic || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>STRN:</Text>
+            <Text>{invoice.relatedEntity.strn || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Address:</Text>
+            <Text>{invoice.relatedEntity.address || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Province:</Text>
+            <Text>{invoice.relatedEntity.province || '-'}</Text>
+          </View>
         </View>
+        
         <View>
-          <Text style={pdfStyles.label}>To</Text>
-          <Text style={pdfStyles.value}>{buyer.name}</Text>
-          <Text>{buyer.address}</Text>
-          <Text>NTN: {buyer.ntn}</Text>
+          <Text style={pdfStyles.label}>BUYER</Text>
+
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Name:</Text>
+            <Text>{invoice.buyer.buyerName || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>NTN:</Text>
+            <Text>{invoice.buyer.ntn || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>CNIC:</Text>
+            <Text>{invoice.buyer.cnic || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>STRN:</Text>
+            <Text>{invoice.buyer.strn || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Address:</Text>
+            <Text>{invoice.buyer.address || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Province:</Text>
+            <Text>{invoice.buyer.province || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Registration Type:</Text>
+            <Text>{invoice.buyer.registrationType || '-'}</Text>
+          </View>
         </View>
       </View>
 
-      <View style={pdfStyles.tableHeader}>
-        <Text style={pdfStyles.colDesc}>Description</Text>
-        <Text style={pdfStyles.colQty}>Qty</Text>
-        <Text style={pdfStyles.colPrice}>Unit</Text>
-        <Text style={pdfStyles.colTax}>Tax</Text>
-        <Text style={pdfStyles.colTotal}>Total</Text>
+      <View style={pdfStyles.hr} />
+
+      <View style={pdfStyles.section}>
+        <Text style={pdfStyles.label}>INVOICE DETAILS</Text>
+
+        <View style={pdfStyles.row}>
+          <Text style={pdfStyles.rowLabel}>Invoice No:</Text>
+          <Text>{invoice.invoiceNumber || '-'}</Text>
+        </View>
+        <View style={pdfStyles.row}>
+          <Text style={pdfStyles.rowLabel}>Invoice Date:</Text>
+          <Text>{invoice.date || '-'}</Text>
+        </View>
+        <View style={pdfStyles.row}>
+          <Text style={pdfStyles.rowLabel}>Reference No:</Text>
+          <Text>{invoice.referenceNumber || '-'}</Text>
+        </View>
+        <View style={pdfStyles.row}>
+          <Text style={pdfStyles.rowLabel}>Salesman:</Text>
+          <Text>{invoice.salesman || '-'}</Text>
+        </View>
       </View>
 
-      {invoice.items.map((item) => (
-        <View key={item.id} style={pdfStyles.tableRow}>
-          <Text style={pdfStyles.colDesc}>{item.description}</Text>
-          <Text style={pdfStyles.colQty}>{item.quantity}</Text>
-          <Text style={pdfStyles.colPrice}>{item.unitPrice.toLocaleString()}</Text>
-          <Text style={pdfStyles.colTax}>{item.salesTax.toLocaleString()}</Text>
-          <Text style={pdfStyles.colTotal}>{item.totalItemValue.toLocaleString()}</Text>
+      <View style={pdfStyles.table}>
+        <View style={[pdfStyles.tableRow, pdfStyles.tableHeader]} fixed>
+          <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>UOM</Text>
+          <Text style={pdfStyles.column}>HS Code</Text>
+          <Text style={pdfStyles.column}>Description</Text>
+          <Text style={pdfStyles.column}>Sale Type</Text>
+          <Text style={pdfStyles.column}>Qty</Text>
+          <Text style={pdfStyles.column}>Rate</Text>
+          <Text style={pdfStyles.column}>Unit Price</Text>
+          <Text style={pdfStyles.column}>Sales Value Exc Tax</Text>
+          <Text style={pdfStyles.column}>Discount</Text>
+          <Text style={pdfStyles.column}>Other Discount</Text>
+          <Text style={pdfStyles.column}>Trade Discount</Text>
+          <Text style={pdfStyles.column}>Sales Tax</Text>
+          <Text style={pdfStyles.column}>Tax Withheld</Text>
+          <Text style={pdfStyles.column}>Extra Tax</Text>
+          <Text style={pdfStyles.column}>Further Tax</Text>
+          <Text style={pdfStyles.column}>FED</Text>
+          <Text style={pdfStyles.column}>SRO Schedule</Text>
+          <Text style={pdfStyles.column}>SRO Serial</Text>
+          <Text style={pdfStyles.column}>Total</Text>
         </View>
-      ))}
 
-      <View style={pdfStyles.totals}>
-        <View style={pdfStyles.totalRow}>
-          <Text>Grand Total</Text>
-          <Text style={pdfStyles.grandTotal}>{invoice.totalValue.toLocaleString()}</Text>
+        {invoice.items.map((item) => (
+          <View key={item.id} style={pdfStyles.tableRow} wrap={false}>
+            <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>{item.uom}</Text>
+            <Text style={pdfStyles.column}>{item.hsCode}</Text>
+            <Text style={pdfStyles.column}>{item.description}</Text>
+            <Text style={pdfStyles.column}>{item.saleType}</Text>
+            <Text style={pdfStyles.column}>{item.quantity}</Text>
+            <Text style={pdfStyles.column}>{item.rate}</Text>
+            <Text style={pdfStyles.column}>{item.unitPrice}</Text>
+            <Text style={pdfStyles.column}>{item.salesValue}</Text>
+            <Text style={pdfStyles.column}>{item.discount}</Text>
+            <Text style={pdfStyles.column}>{item.otherDiscount}</Text>
+            <Text style={pdfStyles.column}>{item.tradeDiscount}</Text>
+            <Text style={pdfStyles.column}>{item.salesTax}</Text>
+            <Text style={pdfStyles.column}>{item.salesTaxWithheld}</Text>
+            <Text style={pdfStyles.column}>{item.extraTax}</Text>
+            <Text style={pdfStyles.column}>{item.furtherTax}</Text>
+            <Text style={pdfStyles.column}>{item.federalExciseDuty}</Text>
+            <Text style={pdfStyles.column}>{item.sroScheduleNo}</Text>
+            <Text style={pdfStyles.column}>{item.sroItemSerialNo}</Text>
+            <Text style={pdfStyles.column}>{item.totalItemValue}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={pdfStyles.totalsWrapper}>
+        <View style={pdfStyles.totals}>
+          <View>
+            <Text style={pdfStyles.totalHeading}>INVOICE SUMMARY</Text>
+          </View>
+          <View style={pdfStyles.totalRow}>
+            <Text>Subtotal:</Text>
+            <Text>{invoice.totalValue.toLocaleString()}</Text>
+          </View>
+          <View style={pdfStyles.totalRow}>
+            <Text>Total Taxes (Charged):</Text>
+            <Text>{invoice.totalValue.toLocaleString()}</Text>
+          </View>
+          <View style={pdfStyles.totalRow}>
+            <Text>236G:</Text>
+            <Text>{invoice.totalValue.toLocaleString()}</Text>
+          </View>
+          <View style={pdfStyles.totalRow}>
+            <Text>236H:</Text>
+            <Text>{invoice.totalValue.toLocaleString()}</Text>
+          </View>
+
+          <View style={[pdfStyles.hr, {marginVertical: 8}]} />
+
+          <View style={[pdfStyles.totalRow, pdfStyles.grandTotal]}>
+            <Text>Grand Total</Text>
+            <Text>{invoice.totalValue.toLocaleString()}</Text>
+          </View>
         </View>
       </View>
     </Page>
@@ -161,7 +295,8 @@ export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, ent
   const totalTax = invoice.items.reduce((acc, item) => acc + item.salesTax, 0);
 
   return (
-    <BlobProvider document={<InvoiceDocument invoice entity buyer />}>
+    <BlobProvider document={<InvoiceDocument invoice={invoice} entity={entity} buyer={buyer} />}>
+    {/* <BlobProvider document={<InvoiceDocument />}> */}
       {({ url, loading, error }) => {
         if (loading) return <p>Loading invoice preview…</p>;
         if (error) return <p>Failed to load invoice</p>;
@@ -178,9 +313,34 @@ export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, ent
                 <h2 className="text-sm font-black uppercase tracking-[0.2em]">Preview: {invoice.number}</h2>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="secondary" icon={<Printer size={16} />} className="rounded-xl h-11">Print</Button>
-                <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Download PDF</Button>
-                <Button icon={<Send size={16} />} className="rounded-xl h-11 px-8">Send to Buyer</Button>
+                <Button
+                  variant="secondary"
+                  icon={<Download size={16} />}
+                  className="rounded-xl h-11"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = url!;
+                    link.download = `${invoice.invoiceNumber}.pdf`;
+                    link.click();
+                  }}
+                >
+                  Download PDF
+                </Button>
+                <Button
+                  icon={<Printer size={16} />}
+                  className="rounded-xl h-11"
+                  onClick={() => {
+                    const printWindow = window.open(url!, '_blank');
+                    if (!printWindow) return;
+
+                    printWindow.onload = () => {
+                      printWindow.focus();
+                      printWindow.print();
+                    };
+                  }}
+                >
+                  Print
+                </Button>
               </div>
             </div>
 
