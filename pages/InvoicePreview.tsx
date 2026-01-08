@@ -4,83 +4,6 @@ import { BlobProvider, Document, Page, Text, View, StyleSheet } from '@react-pdf
 import { Download, Printer, Send, X, Zap, MapPin, Building2, User as UserIcon, Hash, Calendar, CreditCard } from 'lucide-react';
 import { Button } from '@/components/Button';
 
-/* ---------------- MOCK DATA ---------------- */
-const entity = {
-  businessName: 'SparkPair Pvt Ltd',
-  fullAddress: 'Office #12, Tech Avenue, Lahore',
-  ntn: '1234567-8',
-  registrationType: 'Pvt Ltd',
-};
-
-const buyer = {
-  name: 'ABC Traders',
-  address: 'Main Market, Karachi',
-  ntn: '9876543-2',
-  registrationType: 'Trader',
-};
-
-const invoice = {
-  documentType: 'Sales Invoice',
-  number: 'INV-0001',
-  issueDate: '05-01-2026',
-  dueDate: '20-01-2026',
-  status: 'Paid',
-  totalValue: 245000,
-  items: [
-    {
-      id: 1,
-      description: 'Cotton Fabric',
-      hsCode: '5201',
-      quantity: 100,
-      uom: 'pcs',
-      unitPrice: 1200,
-      salesValue: 120000,
-      salesTax: 18000,
-      totalItemValue: 138000,
-      discount: 0,
-      extraTax: 0,
-      furtherTax: 0,
-      fedPayable: 0,
-      otherDiscount: 0,
-      tradeDiscount: 0,
-    },
-    {
-      id: 2,
-      description: 'Polyester Fabric',
-      hsCode: '5401',
-      quantity: 50,
-      uom: 'pcs',
-      unitPrice: 1400,
-      salesValue: 71000,
-      salesTax: 10500,
-      totalItemValue: 81500,
-      discount: 0,
-      extraTax: 0,
-      furtherTax: 0,
-      fedPayable: 0,
-      otherDiscount: 0,
-      tradeDiscount: 0,
-    },
-    {
-      id: 3,
-      description: 'Stitching Charges',
-      hsCode: '-',
-      quantity: 1,
-      uom: 'job',
-      unitPrice: 25000,
-      salesValue: 25000,
-      salesTax: 0,
-      totalItemValue: 25000,
-      discount: 0,
-      extraTax: 0,
-      furtherTax: 0,
-      fedPayable: 0,
-      otherDiscount: 0,
-      tradeDiscount: 0,
-    },
-  ],
-};
-
 /* ---------------- PDF STYLES ---------------- */
 const pdfStyles = StyleSheet.create({
   page: { padding: 16, fontSize: 8, fontFamily: 'Helvetica', lineHeight: 1.4 },
@@ -109,194 +32,238 @@ const pdfStyles = StyleSheet.create({
 });
 
 /* ---------------- PDF DOCUMENT ---------------- */
-const InvoiceDocument = ({invoice, entity, buyer}) => (
-  <Document>
-    {console.log({invoice})}
-    
-    <Page size="A4" style={pdfStyles.page}>
-      <View>
-        <Text style={pdfStyles.title}>SALES TAX INVOICE</Text>
-      </View>
-
-      <View style={pdfStyles.hr} />
-
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+const InvoiceDocument = ({invoice}) => {
+  const summary = {
+    subtotal: invoice.items.reduce((acc, item) => acc + item.salesValue, 0).toFixed(2),
+    totalDiscount: invoice.items.reduce((acc, item) => acc + item.discount, 0).toFixed(2),
+    totalOtherDiscount: invoice.items.reduce((acc, item) => acc + item.otherDiscount, 0).toFixed(2),
+    totalTradeDiscount: invoice.items.reduce((acc, item) => acc + item.tradeDiscount, 0).toFixed(2),
+    totalTaxes: invoice.items.reduce((acc, item) => acc + item.salesTax + item.extraTax + item.furtherTax + item.federalExciseDuty, 0).toFixed(2),
+    totalSalesTax: invoice.items.reduce((acc, item) => acc + item.salesTax, 0).toFixed(2),
+    totalExtraTax: invoice.items.reduce((acc, item) => acc + item.extraTax, 0).toFixed(2),
+    totalFurtherTax: invoice.items.reduce((acc, item) => acc + item.furtherTax, 0).toFixed(2),
+    totalFed: invoice.items.reduce((acc, item) => acc + item.federalExciseDuty, 0).toFixed(2),
+    totalTaxWithheld: invoice.items.reduce((acc, item) => acc + item.salesTaxWithheld, 0).toFixed(2),
+    totalT236g: invoice.items.reduce((acc, item) => acc + item.t236g, 0).toFixed(2),
+    totalT236h: invoice.items.reduce((acc, item) => acc + item.t236h, 0).toFixed(2),
+  }
+  console.log(invoice);
+  
+  return (
+    <Document>
+      <Page size="A4" style={pdfStyles.page}>
         <View>
-          <Text style={pdfStyles.label}>SELLER</Text>
-
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Business Name:</Text>
-            <Text>{invoice.relatedEntity.businessName || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>NTN:</Text>
-            <Text>{invoice.relatedEntity.ntn || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>CNIC:</Text>
-            <Text>{invoice.relatedEntity.cnic || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>STRN:</Text>
-            <Text>{invoice.relatedEntity.strn || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Address:</Text>
-            <Text>{invoice.relatedEntity.address || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Province:</Text>
-            <Text>{invoice.relatedEntity.province || '-'}</Text>
-          </View>
-        </View>
-        
-        <View>
-          <Text style={pdfStyles.label}>BUYER</Text>
-
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Name:</Text>
-            <Text>{invoice.buyer.buyerName || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>NTN:</Text>
-            <Text>{invoice.buyer.ntn || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>CNIC:</Text>
-            <Text>{invoice.buyer.cnic || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>STRN:</Text>
-            <Text>{invoice.buyer.strn || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Address:</Text>
-            <Text>{invoice.buyer.address || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Province:</Text>
-            <Text>{invoice.buyer.province || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Registration Type:</Text>
-            <Text>{invoice.buyer.registrationType || '-'}</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={pdfStyles.hr} />
-
-      <View style={pdfStyles.section}>
-        <Text style={pdfStyles.label}>INVOICE DETAILS</Text>
-
-        <View style={pdfStyles.row}>
-          <Text style={pdfStyles.rowLabel}>Invoice No:</Text>
-          <Text>{invoice.invoiceNumber || '-'}</Text>
-        </View>
-        <View style={pdfStyles.row}>
-          <Text style={pdfStyles.rowLabel}>Invoice Date:</Text>
-          <Text>{invoice.date || '-'}</Text>
-        </View>
-        <View style={pdfStyles.row}>
-          <Text style={pdfStyles.rowLabel}>Reference No:</Text>
-          <Text>{invoice.referenceNumber || '-'}</Text>
-        </View>
-        <View style={pdfStyles.row}>
-          <Text style={pdfStyles.rowLabel}>Salesman:</Text>
-          <Text>{invoice.salesman || '-'}</Text>
-        </View>
-      </View>
-
-      <View style={pdfStyles.table}>
-        <View style={[pdfStyles.tableRow, pdfStyles.tableHeader]} fixed>
-          <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>UOM</Text>
-          <Text style={pdfStyles.column}>HS Code</Text>
-          <Text style={pdfStyles.column}>Description</Text>
-          <Text style={pdfStyles.column}>Sale Type</Text>
-          <Text style={pdfStyles.column}>Qty</Text>
-          <Text style={pdfStyles.column}>Rate</Text>
-          <Text style={pdfStyles.column}>Unit Price</Text>
-          <Text style={pdfStyles.column}>Sales Value Exc Tax</Text>
-          <Text style={pdfStyles.column}>Discount</Text>
-          <Text style={pdfStyles.column}>Other Discount</Text>
-          <Text style={pdfStyles.column}>Trade Discount</Text>
-          <Text style={pdfStyles.column}>Sales Tax</Text>
-          <Text style={pdfStyles.column}>Tax Withheld</Text>
-          <Text style={pdfStyles.column}>Extra Tax</Text>
-          <Text style={pdfStyles.column}>Further Tax</Text>
-          <Text style={pdfStyles.column}>FED</Text>
-          <Text style={pdfStyles.column}>SRO Schedule</Text>
-          <Text style={pdfStyles.column}>SRO Serial</Text>
-          <Text style={pdfStyles.column}>Total</Text>
+          <Text style={pdfStyles.title}>SALES TAX INVOICE</Text>
         </View>
 
-        {invoice.items.map((item) => (
-          <View key={item.id} style={pdfStyles.tableRow} wrap={false}>
-            <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>{item.uom}</Text>
-            <Text style={pdfStyles.column}>{item.hsCode}</Text>
-            <Text style={pdfStyles.column}>{item.description}</Text>
-            <Text style={pdfStyles.column}>{item.saleType}</Text>
-            <Text style={pdfStyles.column}>{item.quantity}</Text>
-            <Text style={pdfStyles.column}>{item.rate}</Text>
-            <Text style={pdfStyles.column}>{item.unitPrice}</Text>
-            <Text style={pdfStyles.column}>{item.salesValue}</Text>
-            <Text style={pdfStyles.column}>{item.discount}</Text>
-            <Text style={pdfStyles.column}>{item.otherDiscount}</Text>
-            <Text style={pdfStyles.column}>{item.tradeDiscount}</Text>
-            <Text style={pdfStyles.column}>{item.salesTax}</Text>
-            <Text style={pdfStyles.column}>{item.salesTaxWithheld}</Text>
-            <Text style={pdfStyles.column}>{item.extraTax}</Text>
-            <Text style={pdfStyles.column}>{item.furtherTax}</Text>
-            <Text style={pdfStyles.column}>{item.federalExciseDuty}</Text>
-            <Text style={pdfStyles.column}>{item.sroScheduleNo}</Text>
-            <Text style={pdfStyles.column}>{item.sroItemSerialNo}</Text>
-            <Text style={pdfStyles.column}>{item.totalItemValue}</Text>
-          </View>
-        ))}
-      </View>
+        <View style={pdfStyles.hr} />
 
-      <View style={pdfStyles.totalsWrapper}>
-        <View style={pdfStyles.totals}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <View>
-            <Text style={pdfStyles.totalHeading}>INVOICE SUMMARY</Text>
-          </View>
-          <View style={pdfStyles.totalRow}>
-            <Text>Subtotal:</Text>
-            <Text>{invoice.totalValue.toLocaleString()}</Text>
-          </View>
-          <View style={pdfStyles.totalRow}>
-            <Text>Total Taxes (Charged):</Text>
-            <Text>{invoice.totalValue.toLocaleString()}</Text>
-          </View>
-          <View style={pdfStyles.totalRow}>
-            <Text>236G:</Text>
-            <Text>{invoice.totalValue.toLocaleString()}</Text>
-          </View>
-          <View style={pdfStyles.totalRow}>
-            <Text>236H:</Text>
-            <Text>{invoice.totalValue.toLocaleString()}</Text>
-          </View>
+            <Text style={pdfStyles.label}>SELLER</Text>
 
-          <View style={[pdfStyles.hr, {marginVertical: 8}]} />
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>Business Name:</Text>
+              <Text>{invoice.relatedEntity.businessName || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>NTN:</Text>
+              <Text>{invoice.relatedEntity.ntn || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>CNIC:</Text>
+              <Text>{invoice.relatedEntity.cnic || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>STRN:</Text>
+              <Text>{invoice.relatedEntity.strn || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>Address:</Text>
+              <Text>{invoice.relatedEntity.address || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>Province:</Text>
+              <Text>{invoice.relatedEntity.province || '-'}</Text>
+            </View>
+          </View>
+          
+          <View>
+            <Text style={pdfStyles.label}>BUYER</Text>
 
-          <View style={[pdfStyles.totalRow, pdfStyles.grandTotal]}>
-            <Text>Grand Total</Text>
-            <Text>{invoice.totalValue.toLocaleString()}</Text>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>Name:</Text>
+              <Text>{invoice.buyer.buyerName || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>NTN:</Text>
+              <Text>{invoice.buyer.ntn || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>CNIC:</Text>
+              <Text>{invoice.buyer.cnic || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>STRN:</Text>
+              <Text>{invoice.buyer.strn || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>Address:</Text>
+              <Text>{invoice.buyer.address || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>Province:</Text>
+              <Text>{invoice.buyer.province || '-'}</Text>
+            </View>
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>Registration Type:</Text>
+              <Text>{invoice.buyer.registrationType || '-'}</Text>
+            </View>
           </View>
         </View>
-      </View>
-    </Page>
-  </Document>
-);
+
+        <View style={pdfStyles.hr} />
+
+        <View style={pdfStyles.section}>
+          <Text style={pdfStyles.label}>INVOICE DETAILS</Text>
+
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Invoice No:</Text>
+            <Text>{invoice.invoiceNumber || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Invoice Date:</Text>
+            <Text>{invoice.date || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Reference No:</Text>
+            <Text>{invoice.referenceNumber || '-'}</Text>
+          </View>
+          <View style={pdfStyles.row}>
+            <Text style={pdfStyles.rowLabel}>Salesman:</Text>
+            <Text>{invoice.salesman || '-'}</Text>
+          </View>
+        </View>
+
+        <View style={pdfStyles.table}>
+          <View style={[pdfStyles.tableRow, pdfStyles.tableHeader]} fixed>
+            <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>UOM</Text>
+            <Text style={pdfStyles.column}>HS Code</Text>
+            <Text style={pdfStyles.column}>Description</Text>
+            <Text style={pdfStyles.column}>Sale Type</Text>
+            <Text style={pdfStyles.column}>Qty</Text>
+            <Text style={pdfStyles.column}>Rate</Text>
+            <Text style={pdfStyles.column}>Unit Price</Text>
+            <Text style={pdfStyles.column}>Sales Value Exc Tax</Text>
+            <Text style={pdfStyles.column}>Discount</Text>
+            <Text style={pdfStyles.column}>Other Discount</Text>
+            <Text style={pdfStyles.column}>Trade Discount</Text>
+            <Text style={pdfStyles.column}>Sales Tax</Text>
+            <Text style={pdfStyles.column}>Tax Withheld</Text>
+            <Text style={pdfStyles.column}>Extra Tax</Text>
+            <Text style={pdfStyles.column}>Further Tax</Text>
+            <Text style={pdfStyles.column}>FED</Text>
+            <Text style={pdfStyles.column}>SRO Schedule</Text>
+            <Text style={pdfStyles.column}>SRO Serial</Text>
+            <Text style={pdfStyles.column}>Total</Text>
+          </View>
+
+          {invoice.items.map((item) => (
+            <View key={item.id} style={pdfStyles.tableRow} wrap={false}>
+              <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>{item.uom}</Text>
+              <Text style={pdfStyles.column}>{item.hsCode}</Text>
+              <Text style={pdfStyles.column}>{item.description}</Text>
+              <Text style={pdfStyles.column}>{item.saleType}</Text>
+              <Text style={pdfStyles.column}>{item.quantity}</Text>
+              <Text style={pdfStyles.column}>{item.rate}</Text>
+              <Text style={pdfStyles.column}>{item.unitPrice}</Text>
+              <Text style={pdfStyles.column}>{item.salesValue}</Text>
+              <Text style={pdfStyles.column}>{item.discount}</Text>
+              <Text style={pdfStyles.column}>{item.otherDiscount}</Text>
+              <Text style={pdfStyles.column}>{item.tradeDiscount}</Text>
+              <Text style={pdfStyles.column}>{item.salesTax}</Text>
+              <Text style={pdfStyles.column}>{item.salesTaxWithheld}</Text>
+              <Text style={pdfStyles.column}>{item.extraTax}</Text>
+              <Text style={pdfStyles.column}>{item.furtherTax}</Text>
+              <Text style={pdfStyles.column}>{item.federalExciseDuty}</Text>
+              <Text style={pdfStyles.column}>{item.sroScheduleNo}</Text>
+              <Text style={pdfStyles.column}>{item.sroItemSerialNo}</Text>
+              <Text style={pdfStyles.column}>{item.totalItemValue}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={pdfStyles.totalsWrapper}>
+          <View style={pdfStyles.totals}>
+            <View>
+              <Text style={pdfStyles.totalHeading}>INVOICE SUMMARY</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Subtotal:</Text>
+              <Text>{summary.subtotal}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Total Discount:</Text>
+              <Text>{summary.totalDiscount}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Total Other Discount:</Text>
+              <Text>{summary.totalOtherDiscount}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Total Trade Discount:</Text>
+              <Text>{summary.totalTradeDiscount}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Total Taxes (Charged):</Text>
+              <Text>{summary.totalTaxes}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Sales Tax (Applicable):</Text>
+              <Text>{summary.totalSalesTax}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Extra Tax:</Text>
+              <Text>{summary.totalExtraTax}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Further Tax:</Text>
+              <Text>{summary.totalFurtherTax}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>FED Payable:</Text>
+              <Text>{summary.totalFed}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>Sales Tax Withheld at Source:</Text>
+              <Text>{summary.totalTaxWithheld}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>236G:</Text>
+              <Text>{summary.totalT236g}</Text>
+            </View>
+            <View style={pdfStyles.totalRow}>
+              <Text>236H:</Text>
+              <Text>{summary.totalT236h}</Text>
+            </View>
+
+            <View style={[pdfStyles.hr, {marginVertical: 8}]} />
+
+            <View style={[pdfStyles.totalRow, pdfStyles.grandTotal]}>
+              <Text>Grand Total:</Text>
+              <Text>{invoice.totalValue.toFixed(2)}</Text>
+            </View>
+          </View>
+        </View>
+      </Page>
+    </Document>
+  )
+};
 
 /* ---------------- REACT PREVIEW ---------------- */
-export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, entity, buyer, onClose }) => {
-  const subtotal = invoice.items.reduce((acc, item) => acc + item.salesValue, 0);
-  const totalTax = invoice.items.reduce((acc, item) => acc + item.salesTax, 0);
-
+export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, onClose }) => {
   return (
-    <BlobProvider document={<InvoiceDocument invoice={invoice} entity={entity} buyer={buyer} />}>
-    {/* <BlobProvider document={<InvoiceDocument />}> */}
+    <BlobProvider document={<InvoiceDocument invoice={invoice} />}>
       {({ url, loading, error }) => {
         if (loading) return <p>Loading invoice preview…</p>;
         if (error) return <p>Failed to load invoice</p>;

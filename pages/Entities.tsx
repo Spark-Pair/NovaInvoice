@@ -1,4 +1,4 @@
-
+import * as XLSX from "xlsx";
 import React, { useState, useEffect } from 'react';
 import { 
   Plus,
@@ -207,6 +207,59 @@ const Entities: React.FC = () => {
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const exportData = async () => {
+    try {
+      setIsLoading(true);
+
+      const filterParams = buildFilterParams();
+
+      const { data } = await api.get("/entities", {
+        params: {
+          noLimit: true,
+          ...filterParams,
+        },
+      });
+
+      const rows = data.data.map((entity: any) => ({
+        "Business Name": entity.businessName,
+        "Username": entity.user?.username,
+        "Owner Name": entity.user?.name,
+
+        "Registration Type": entity.registrationType,
+        "Province": entity.province,
+
+        "NTN": entity.ntn,
+        "CNIC": entity.cnic,
+        "STRN": entity.strn,
+
+        "Address": entity.fullAddress,
+
+        "Status": entity.isActive ? "Active" : "Inactive",
+
+        "Created At": new Date(entity.createdAt)
+          .toISOString()
+          .split("T")[0],
+      }));
+
+      // 🧾 Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+
+      // 📘 Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Entities");
+
+      // 💾 Download
+      XLSX.writeFile(
+        workbook,
+        `Entities_${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-8 h-full">
       <div className="flex justify-between items-end">
@@ -305,7 +358,7 @@ const Entities: React.FC = () => {
               >
                 Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
               </Button>
-              <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
+              <Button variant="secondary" onClick={exportData} icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
             </div>
           </div>
 

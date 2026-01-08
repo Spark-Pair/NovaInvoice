@@ -1,4 +1,4 @@
-
+import * as XLSX from "xlsx";
 import React, { useState, useEffect } from 'react';
 import { 
   Plus,
@@ -160,6 +160,52 @@ const Buyers: React.FC = () => {
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const exportData = async () => {
+    try {
+      setIsLoading(true);
+
+      const params: any = {
+        noLimit: true,
+        ...appliedFilters,
+      };
+
+      const { data } = await api.get("/buyers", { params });
+
+      // 🔥 Format rows
+      const rows = data.data.map((buyer: any, index: number) => ({
+        "Sr #": index + 1,
+        "Buyer Name": buyer.buyerName,
+        "Registration Type": buyer.registrationType,
+        "Province": buyer.province,
+        "NTN": buyer.ntn || "-",
+        "CNIC": buyer.cnic || "-",
+        "STRN": buyer.strn || "-",
+        "Full Address": buyer.fullAddress || "-",
+        "Status": buyer.isActive ? "Active" : "Inactive",
+        "Created Date": new Date(buyer.createdAt)
+          .toISOString()
+          .split("T")[0],
+      }));
+
+      // 🧾 Worksheet
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+
+      // 📘 Workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Buyers");
+
+      // 💾 Download
+      XLSX.writeFile(
+        workbook,
+        `Buyers_${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-8 h-full">
       <div className="flex justify-between items-end">
@@ -256,7 +302,7 @@ const Buyers: React.FC = () => {
               >
                 Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
               </Button>
-              <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
+              <Button variant="secondary" onClick={exportData} icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
             </div>
           </div>
 

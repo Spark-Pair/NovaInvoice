@@ -45,6 +45,7 @@ export const EntityFilterModal: React.FC<EntityFilterModalProps> = ({
   onClear
 }) => {
   const updateFilter = (key: string, value: string) => {
+    if (value === 'Select...') value = '';
     setFilters({ ...filters, [key]: value });
   };
 

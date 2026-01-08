@@ -1,4 +1,4 @@
-
+import * as XLSX from "xlsx";
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
@@ -218,6 +218,90 @@ const Invoices: React.FC = () => {
     'Not-Sent': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
   };
 
+  const exportData = async () => {
+    try {
+      setIsLoading(true);
+
+      const filterParams = buildFilterParams();
+
+      const { data } = await api.get("/invoices", {
+        params: {
+          noLimit: true,
+          ...filterParams,
+        },
+      });
+
+      // 🔥 Flatten invoices → items
+      const rows = data.invoices.flatMap((invoice) =>
+        invoice.items.map((item) => ({
+          "Invoice Number": invoice.invoiceNumber,
+          "Invoice Date": new Date(invoice.date).toISOString().split("T")[0],
+          "Reference Number": invoice.referenceNumber,
+          "Document Type": invoice.documentType,
+          "Salesman": invoice.salesman,
+
+          "Buyer Name": invoice.buyer?.buyerName,
+          "Buyer NTN": invoice.buyer?.ntn,
+          "Buyer CNIC": invoice.buyer?.cnic,
+          "Buyer STRN": invoice.buyer?.strn,
+          "Buyer Address": invoice.buyer?.address,
+          "Buyer Province": invoice.buyer?.province,
+          "Buyer Registration Type": invoice.buyer?.registrationType,
+
+          "Seller Name": invoice.relatedEntity?.businessName,
+          "Seller NTN": invoice.relatedEntity?.ntn,
+          "Seller CNIC": invoice.relatedEntity?.cnic,
+          "Seller STRN": invoice.relatedEntity?.strn,
+          "Seller Address": invoice.relatedEntity?.address,
+          "Seller Province": invoice.relatedEntity?.province,
+
+          "UOM": item.uom,
+          "HS Code": item.hsCode,
+          "Description": item.description,
+          "Sale Type": item.saleType,
+          "Quantity": item.quantity,
+          "Rate": item.rate,
+          "Unit Price": item.unitPrice,
+          "Sales Value": item.salesValue,
+          "Discount": item.discount,
+          "Other Discount": item.otherDiscount,
+          "Trade Discount": item.tradeDiscount,
+          "Sales Tax": item.salesTax,
+          "Sales Tax Withheld": item.salesTaxWithheld,
+          "Extra Tax": item.extraTax,
+          "Further Tax": item.furtherTax, // renamed for clarity
+          "FED": item.federalExciseDuty,
+          "SRO Schedule No": item.sroScheduleNo,
+          "SRO Item Serial No": item.sroItemSerialNo,
+          "236G": item.t236g,
+          "236H": item.t236h,
+          "Fixed Value": item.fixedValue,
+          "Item Total Value": item.totalItemValue,
+
+          "Invoice Total": invoice.totalValue,
+          "Is Sent": invoice.isSent ? "Yes" : "No",
+        }))
+      );
+
+      // 🧾 Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+
+      // 📘 Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Invoices");
+
+      // 💾 Download
+      XLSX.writeFile(
+        workbook,
+        `Invoices_${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-8 max-w-7xl mx-auto flex flex-col h-full">
@@ -316,7 +400,7 @@ const Invoices: React.FC = () => {
                 >
                   Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
                 </Button>
-                <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export Ledger</Button>
+                <Button onClick={exportData} variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
               </div>
             </div>
 
@@ -334,7 +418,7 @@ const Invoices: React.FC = () => {
                     <th className="px-6 py-5">Buyer</th>
                     <th className="px-6 py-5">Status</th>
                     <th className="px-6 py-5">Value</th>
-                    <th className="px-6 py-5">Maturity</th>
+                    <th className="px-6 py-5">Dateq</th>
                     <th className="px-6 py-5 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -482,17 +566,8 @@ const Invoices: React.FC = () => {
       />
 
       {selectedInvoiceForPreview && (
-        // <InvoicePreview
-        //   invoice={selectedInvoiceForPreview}
-        //   entity={MOCK_ENTITY}
-        //   buyer={buyers.find(b => b.id === selectedInvoiceForPreview.buyerId) || buyers[0]}
-        //   onClose={() => setSelectedInvoiceForPreview(null)}
-        // />
-
         <InvoicePreview
           invoice={selectedInvoiceForPreview}
-          entity={MOCK_ENTITY}
-          buyer={buyers.find(b => b.id === selectedInvoiceForPreview.buyerId) || buyers[0]}
           onClose={() => setSelectedInvoiceForPreview(null)}
         />
       )}

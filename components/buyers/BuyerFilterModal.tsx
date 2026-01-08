@@ -45,6 +45,7 @@ export const BuyerFilterModal: React.FC<BuyerFilterModalProps> = ({
   onClear
 }) => {
   const updateFilter = (key: string, value: string) => {
+    if (value === 'Select...') value = '';
     setFilters({ ...filters, [key]: value });
   };
 

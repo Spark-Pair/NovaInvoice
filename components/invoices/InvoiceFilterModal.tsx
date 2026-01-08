@@ -26,6 +26,7 @@ export const InvoiceFilterModal: React.FC<InvoiceFilterModalProps> = ({
   onClear
 }) => {
   const updateFilter = (key: string, value: string) => {
+    if (value === 'Select...') value = '';
     setFilters({ ...filters, [key]: value });
   };
 
