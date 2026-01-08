@@ -1023,7 +1023,10 @@ interface CreateInvoiceModalProps {
   onAddNewBuyer: () => void;
 }
 
-const INITIAL_ITEM = {
+const generateId = () => crypto.randomUUID();
+
+const createInitialItem = () => ({
+  id: generateId(),
   hsCode: '',
   description: '',
   saleType: SALE_TYPES[0],
@@ -1045,8 +1048,34 @@ const INITIAL_ITEM = {
   fixedValue: 0,
   sroScheduleNo: SRO_SCHEDULE_OPTIONS[0],
   sroItemSerialNo: SRO_SERIAL_OPTIONS[0],
-  totalItemValue: 0
-};
+  totalItemValue: 0,
+});
+
+
+// const INITIAL_ITEM = {
+//   hsCode: '',
+//   description: '',
+//   saleType: SALE_TYPES[0],
+//   quantity: 1,
+//   uom: UOM_OPTIONS[0],
+//   rate: RATE_OPTIONS[0],
+//   unitPrice: 0,
+//   salesValue: 0,
+//   salesTax: 0,
+//   discount: 0,
+//   otherDiscount: 0,
+//   salesTaxWithheld: 0,
+//   extraTax: 0,
+//   furtherTax: 0,
+//   federalExciseDuty: 0,
+//   t236g: 0,
+//   t236h: 0,
+//   tradeDiscount: 0,
+//   fixedValue: 0,
+//   sroScheduleNo: SRO_SCHEDULE_OPTIONS[0],
+//   sroItemSerialNo: SRO_SERIAL_OPTIONS[0],
+//   totalItemValue: 0
+// };
 
 export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ 
   isOpen, 
@@ -1063,7 +1092,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     salesman: '',
     referenceNumber: '',
     buyerId: '',
-    items: [{ ...INITIAL_ITEM }]
+    items: [createInitialItem()],
   });
 
   useEffect(() => {
@@ -1131,6 +1160,8 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   };
 
   const updateItem = (id: string, updates) => {
+    console.log(id);
+    
     setInvoiceData(prev => ({
       ...prev,
       items: (prev.items || []).map(item => {
@@ -1154,19 +1185,19 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   };
 
   const addItem = () => {
-    setInvoiceData({
-      ...invoiceData,
-      items: [...(invoiceData.items || []), { ...INITIAL_ITEM}]
-    });
+    setInvoiceData(prev => ({
+      ...prev,
+      items: [...prev.items, createInitialItem()],
+    }));
   };
 
   const removeItem = (id: string) => {
-    if ((invoiceData.items || []).length > 1) {
-      setInvoiceData({
-        ...invoiceData,
-        items: (invoiceData.items || []).filter(i => i.id !== id)
-      });
-    }
+    setInvoiceData(prev => ({
+      ...prev,
+      items: prev.items.length > 1
+        ? prev.items.filter(item => item.id !== id)
+        : prev.items,
+    }));
   };
 
   const totalInvoiceValue = useMemo(() => 
@@ -1177,9 +1208,11 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   const handleCreate = async () => {
     if (!invoiceData.buyerId || !invoiceData.items?.length) return;
 
-    const { data } = await api.post('/invoices', invoiceData);
+    console.log(invoiceData);
+
+    // const { data } = await api.post('/invoices', invoiceData);
     
-    onAdd();
+    // onAdd();
   };
 
   return (
