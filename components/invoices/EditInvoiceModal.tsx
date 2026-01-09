@@ -1051,49 +1051,30 @@ const createInitialItem = () => ({
   totalItemValue: 0,
 });
 
-
-// const INITIAL_ITEM = {
-//   hsCode: '',
-//   description: '',
-//   saleType: SALE_TYPES[0],
-//   quantity: 1,
-//   uom: UOM_OPTIONS[0],
-//   rate: RATE_OPTIONS[0],
-//   unitPrice: 0,
-//   salesValue: 0,
-//   salesTax: 0,
-//   discount: 0,
-//   otherDiscount: 0,
-//   salesTaxWithheld: 0,
-//   extraTax: 0,
-//   furtherTax: 0,
-//   federalExciseDuty: 0,
-//   t236g: 0,
-//   t236h: 0,
-//   tradeDiscount: 0,
-//   fixedValue: 0,
-//   sroScheduleNo: SRO_SCHEDULE_OPTIONS[0],
-//   sroItemSerialNo: SRO_SERIAL_OPTIONS[0],
-//   totalItemValue: 0
-// };
-
-export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ 
+export const EditInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ 
   isOpen, 
   onClose, 
-  onAdd, 
-  onAddNewBuyer
+  onUpdate,
+  invoice
 }) => {
   const [buyers, setBuyers] = useState([]);
   const [selectedBuyer, setSelectedBuyer] = useState(null);
-  const [invoiceData, setInvoiceData] = useState({
-    invoiceNumber: '',
-    date: new Date().toISOString().split('T')[0],
-    documentType: DOCUMENT_TYPES[0],
-    salesman: '',
-    referenceNumber: '',
-    buyerId: '',
-    items: [createInitialItem()],
-  });
+  const [invoiceData, setInvoiceData] = useState(null);
+  
+  useEffect(() => {
+    if (!invoice) return;
+
+    const normalizedInvoice = {
+      ...invoice,
+      items: (invoice.items || []).map(item => ({
+        ...item,
+        id: item.id ?? item._id,
+      })),
+    };
+
+    setInvoiceData(normalizedInvoice);
+    setSelectedBuyer(invoice.buyer);
+  }, [invoice]);
 
   useEffect(() => {
     fetchBuyers();
@@ -1105,11 +1086,11 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   }
 
   useEffect(() => {
-    if (!invoiceData.buyerId) return;
+    if (!invoiceData?.buyerId) return;
 
     const fetchBuyerDetails = async () => {
       try {
-        const { data } = await api.get(`/invoices/buyers/${invoiceData.buyerId}`);
+        const { data } = await api.get(`/invoices/buyers/${invoiceData?.buyerId}`);
         setSelectedBuyer(data.buyer); // store the detailed info
       } catch (err) {
         console.error("Failed to fetch buyer details:", err);
@@ -1117,7 +1098,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     };
 
     fetchBuyerDetails();
-  }, [invoiceData.buyerId]);
+  }, [invoiceData?.buyerId]);
 
   const num = (v: any) => Number(v) || 0;
 
@@ -1199,20 +1180,22 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   };
 
   const totalInvoiceValue = useMemo(() => 
-    (invoiceData.items || []).reduce((acc, curr) => acc + curr.totalItemValue, 0),
-    [invoiceData.items]
+    (invoiceData?.items || []).reduce((acc, curr) => acc + curr.totalItemValue, 0),
+    [invoiceData?.items]
   );
 
-  const handleCreate = async () => {
-    if (!invoiceData.buyerId || !invoiceData.items?.length) return;
+  const handleUpdate = async () => {
+    if ((!invoiceData?.buyerId && !invoice.buyer) || !invoiceData?.items?.length) return;
 
-    const { data } = await api.post('/invoices', invoiceData);
+    console.log(invoiceData);
+
+    const { data } = await api.patch(`/invoices/${invoiceData.id}`, invoiceData);
     
-    onAdd();
+    // onAdd();
   };
 
   return (
-    <Modal size="5xl" isOpen={isOpen} onClose={onClose} title="Create Professional Invoice">
+    <Modal size="5xl" isOpen={isOpen} onClose={onClose} title={`Edit Invoice (${invoiceData?.invoiceNumber})`}>
       <div className="space-y-8 h-[80vh] overflow-y-auto pr-4 custom-scrollbar scroll-smooth">
         
         {/* Section 1: Basic Info */}
@@ -1224,16 +1207,16 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Invoice Information</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Input label="Invoice Number *" placeholder="Invoice Number" value={invoiceData.invoiceNumber} onChange={e => setInvoiceData({...invoiceData, invoiceNumber: e.target.value})} />
-            <Input label="Invoice Date *" type="date" value={invoiceData.issueDate} onChange={e => setInvoiceData({...invoiceData, issueDate: e.target.value})} />
-            <Input label="Reference Number" placeholder="Optional" value={invoiceData.referenceNumber} onChange={e => setInvoiceData({...invoiceData, referenceNumber: e.target.value})} />
-            <Input label="Salesman" placeholder="Salesman" value={invoiceData.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
+            <Input label="Invoice Number *" placeholder="Invoice Number" value={invoiceData?.invoiceNumber} onChange={e => setInvoiceData({...invoiceData, invoiceNumber: e.target.value})} />
+            <Input label="Invoice Date *" type="date" value={invoiceData?.date} onChange={e => setInvoiceData({...invoiceData, date: e.target.value})} />
+            <Input label="Reference Number" placeholder="Optional" value={invoiceData?.referenceNumber} onChange={e => setInvoiceData({...invoiceData, referenceNumber: e.target.value})} />
+            <Input label="Salesman" placeholder="Salesman" value={invoiceData?.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
             <div className="col-span-2">
               {/* Fix: casting the Select value change to satisfy the strict union type of Invoice['documentType'] */}
               <Select 
                 label="Document Type" 
                 options={[...DOCUMENT_TYPES]} 
-                value={invoiceData.documentType || DOCUMENT_TYPES[0]} 
+                value={invoiceData?.documentType || DOCUMENT_TYPES[0]} 
                 onChange={val => setInvoiceData({...invoiceData, documentType: val})} 
               />
             </div>
@@ -1249,9 +1232,6 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
               </div>
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Buyer Details</h3>
             </div>
-            <Button variant="ghost" icon={<UserPlus size={16} />} className="text-xs h-8 px-3 rounded-lg" onClick={onAddNewBuyer}>
-              Quick Add Buyer
-            </Button>
           </div>
           
           <Select 
@@ -1302,7 +1282,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
           </div>
 
           <div className="space-y-6">
-            {(invoiceData.items || []).map((item, index) => (
+            {(invoiceData?.items || []).map((item, index) => (
               <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative group">
                 <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
                   Item {index + 1}
@@ -1387,11 +1367,11 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
           <Button variant="secondary" className="flex-1 sm:flex-none px-10 h-14 rounded-2xl" onClick={onClose}>Discard</Button>
           <Button 
             className="flex-1 sm:flex-none px-10 h-14 rounded-2xl shadow-xl shadow-indigo-500/20" 
-            onClick={handleCreate}
-            disabled={!invoiceData.buyerId || totalInvoiceValue === 0}
+            onClick={handleUpdate}
+            disabled={(!invoiceData?.buyerId && !invoiceData?.buyer) || totalInvoiceValue === 0}
             icon={<Calculator size={20} />}
           >
-            Generate & Preview
+            Update & Preview
           </Button>
         </div>
       </div>

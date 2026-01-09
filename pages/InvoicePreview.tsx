@@ -47,7 +47,6 @@ const InvoiceDocument = ({invoice}) => {
     totalT236g: invoice.items.reduce((acc, item) => acc + item.t236g, 0).toFixed(2),
     totalT236h: invoice.items.reduce((acc, item) => acc + item.t236h, 0).toFixed(2),
   }
-  console.log(invoice);
   
   return (
     <Document>

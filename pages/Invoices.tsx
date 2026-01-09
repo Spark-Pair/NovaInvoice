@@ -16,7 +16,8 @@ import {
   Send,
   Trash2,
   Clock,
-  Upload
+  Upload,
+  Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
@@ -32,25 +33,13 @@ import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Invoice, Buyer, Entity } from '../types';
 import api from '@/axios';
 import Loader from '@/components/Loader';
+import { EditInvoiceModal } from "@/components/invoices/EditInvoiceModal";
 
 // Demo Data
 const MOCK_BUYERS: Buyer[] = [
   { id: '1', name: 'Global Tech Corp', registrationType: 'Registered', ntn: '8877665-4', cnic: '42101-5555555-1', strn: '12-00-1122-334-55', province: 'PUNJAB', address: 'Plot 12, Industrial Area, Lahore', status: 'Active', createdAt: '2024-01-20' },
   { id: '2', name: 'Greenway Retail', registrationType: 'Unregistered', ntn: '1122334-5', cnic: '42201-4444444-2', province: 'SINDH', address: 'Shop 4, Market Square, Karachi', status: 'Active', createdAt: '2024-02-15' },
 ];
-
-const MOCK_ENTITY: Entity = {
-  id: '1',
-  businessName: 'Horizon Digital Holdings',
-  registrationType: 'Registered',
-  ntn: '1234567-1',
-  cnic: '42101-1234567-1',
-  strn: '12-34-5678-901-23',
-  province: 'PUNJAB',
-  fullAddress: 'Suite 402, Business Bay, Lahore',
-  status: 'Active',
-  createdAt: '2024-01-15'
-};
 
 const Invoices: React.FC = () => {
   const [invoices, setInvoices] = useState([]);
@@ -64,10 +53,11 @@ const Invoices: React.FC = () => {
   const [buyers, setBuyers] = useState<Buyer[]>(MOCK_BUYERS);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [selectedInvoiceForPreview, setSelectedInvoiceForPreview] = useState<Invoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [activeContextMenu, setActiveContextMenu] = useState<string | null>(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState<{ title: string; message: string; onConfirm: () => void; type: 'danger' | 'warning' | 'info' }>({ title: '', message: '', onConfirm: () => {}, type: 'info' });
@@ -85,7 +75,7 @@ const Invoices: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchEntities(currentPage, true);
+    fetchInvoices(currentPage, true);
   }, [currentPage, appliedFilters]);
 
   const buildFilterParams = () => {
@@ -105,7 +95,7 @@ const Invoices: React.FC = () => {
     return params;
   };
 
-  const fetchEntities = async (page = 1, showTableLoader = false) => {
+  const fetchInvoices = async (page = 1, showTableLoader = false) => {
     try {
       showTableLoader ? setIsTableLoading(true) : setIsLoading(true);
 
@@ -126,7 +116,7 @@ const Invoices: React.FC = () => {
         documentType: invoice.documentType,
         salesman: invoice.salesman,
         referenceNumber: invoice.referenceNumber,
-        buyer: invoice.buyer,
+        buyer: {...invoice.buyer, address: invoice.buyer.fullAddress},
         relatedEntity: invoice.relatedEntity,
         items: invoice.items,
         isSent: invoice.isSent,
@@ -158,7 +148,7 @@ const Invoices: React.FC = () => {
   const handleAddInvoice = () => {
     handleClearFilters();
     setIsModalOpen(false);
-    // setSelectedInvoiceForPreview(invoice);
+    // setSelectedInvoice(invoice);
   };
 
   const handleAddBuyer = (buyer: Buyer) => {
@@ -192,8 +182,6 @@ const Invoices: React.FC = () => {
   }
 
   const handleApplyFilters = () => {
-    console.log({ ...filters });
-    
     setAppliedFilters({ ...filters });
     setCurrentPage(1);
     setPageInput('1');
@@ -429,7 +417,7 @@ const Invoices: React.FC = () => {
                       <tr 
                         key={inv.id} 
                         className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer"
-                        onClick={() => setSelectedInvoiceForPreview(inv)}
+                        onClick={() => setSelectedInvoice(inv)}
                       >
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-4">
@@ -483,8 +471,11 @@ const Invoices: React.FC = () => {
                                 className="absolute right-6 top-14 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 py-2 overflow-hidden text-left"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <button onClick={() => {setSelectedInvoiceForPreview(inv); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                                  <Eye size={14} /> View Document
+                                <button onClick={() => {setSelectedInvoice(inv); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                                  <Eye size={14} /> View Invoice
+                                </button>
+                                <button onClick={() => {setSelectedInvoice(inv); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                                  <Edit2 size={14} /> Edit Invoice
                                 </button>
                                 <button onClick={() => {setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                   <Send size={14} /> Send to FBR
@@ -532,6 +523,13 @@ const Invoices: React.FC = () => {
           setIsBuyerModalOpen(true);
         }}
       />
+      
+      <EditInvoiceModal 
+        isOpen={isEditModalOpen && selectedInvoice} 
+        onClose={() => { setIsEditModalOpen(false); setSelectedInvoice(null); }} 
+        // onUpdate={handleUpdateEntity}
+        invoice={selectedInvoice}
+      />
 
       <BulkUploadModal 
         isOpen={isBulkUploadOpen} 
@@ -565,10 +563,10 @@ const Invoices: React.FC = () => {
         type={confirmationConfig.type}
       />
 
-      {selectedInvoiceForPreview && (
+      {selectedInvoice && !isEditModalOpen && (
         <InvoicePreview
-          invoice={selectedInvoiceForPreview}
-          onClose={() => setSelectedInvoiceForPreview(null)}
+          invoice={selectedInvoice}
+          onClose={() => setSelectedInvoice(null)}
         />
       )}
     </>
