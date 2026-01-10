@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
+import api from '@/axios';
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -60,15 +61,45 @@ export const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClos
     fileInputRef.current?.click();
   };
 
-  const handleUpload = () => {
+  // const handleUpload = () => {
+  //   if (!file) return;
+  //   setIsUploading(true);
+  //   // Simulate upload delay
+  //   setTimeout(() => {
+  //     setIsUploading(false);
+  //     setFile(null);
+  //     onClose();
+  //   }, 2000);
+  // };
+
+  const handleUpload = async () => {
     if (!file) return;
+
     setIsUploading(true);
-    // Simulate upload delay
-    setTimeout(() => {
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file); // backend key: file
+
+      const { data } = await api.post(
+        '/invoices/bulk-upload',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      console.log('Upload success:', data);
+
+      // setFile(null);
+      // onClose();
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
       setIsUploading(false);
-      setFile(null);
-      onClose();
-    }, 2000);
+    }
   };
 
   return (
@@ -81,11 +112,13 @@ export const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClos
       >
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <button 
+            <a
+              href="/DI_FORMAT.xlsx"
+              download
               className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 transition-colors text-xs font-black uppercase tracking-widest"
             >
               <Download size={16} /> Download Template
-            </button>
+            </a>
             <button 
               onClick={() => setShowInfo(true)}
               className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors text-xs font-black uppercase tracking-widest"
@@ -191,21 +224,6 @@ export const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClos
         size="2xl"
       >
         <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-4 custom-scrollbar">
-          <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
-                <FileText size={24} />
-              </div>
-              <div>
-                <h5 className="font-bold text-slate-900 dark:text-white">Sample Template</h5>
-                <p className="text-xs text-slate-500">Includes all required and optional columns</p>
-              </div>
-            </div>
-            <Button variant="secondary" icon={<Download size={16} />} className="rounded-xl h-10 px-4 text-xs font-bold uppercase tracking-widest">
-              Download Template
-            </Button>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section className="space-y-4">
               <h6 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">

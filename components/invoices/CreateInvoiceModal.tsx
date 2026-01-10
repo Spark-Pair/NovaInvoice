@@ -1080,10 +1080,10 @@ const createInitialItem = () => ({
 export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ 
   isOpen, 
   onClose, 
-  onAdd, 
+  onAdd,
+  buyers,
   onAddNewBuyer
 }) => {
-  const [buyers, setBuyers] = useState([]);
   const [selectedBuyer, setSelectedBuyer] = useState(null);
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: '',
@@ -1094,15 +1094,6 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     buyerId: '',
     items: [createInitialItem()],
   });
-
-  useEffect(() => {
-    fetchBuyers();
-  }, [])
-
-  const fetchBuyers = async () => {
-    const { data } = await api.get("/invoices/buyers");
-    setBuyers(data.buyers);
-  }
 
   useEffect(() => {
     if (!invoiceData.buyerId) return;
@@ -1208,7 +1199,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
     const { data } = await api.post('/invoices', invoiceData);
     
-    onAdd();
+    onAdd(data.invoice);
   };
 
   return (

@@ -25,7 +25,6 @@ import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { CreateInvoiceModal } from '../components/invoices/CreateInvoiceModal';
 import { BulkUploadModal } from '../components/invoices/BulkUploadModal';
-// import { InvoicePreview } from '../components/invoices/InvoicePreview';
 import { InvoicePreview } from './InvoicePreview';
 import { InvoiceFilterModal } from '../components/invoices/InvoiceFilterModal';
 import { AddBuyerModal } from '../components/buyers/AddBuyerModal';
@@ -145,16 +144,30 @@ const Invoices: React.FC = () => {
     setPageInput(newPage.toString());
   };
 
-  const handleAddInvoice = () => {
+  const handleAddInvoice = (invoice) => {
     handleClearFilters();
     setIsModalOpen(false);
-    // setSelectedInvoice(invoice);
+    setSelectedInvoice(invoice);
+  };
+
+  const handleUpdateEntity = (invoice) => {
+    handleClearFilters();
+    setIsEditModalOpen(false);
+    setSelectedInvoice(invoice);
+  };
+
+  useEffect(() => {
+    fetchBuyers();
+  }, [])
+
+  const fetchBuyers = async () => {
+    const { data } = await api.get("/invoices/buyers");
+    setBuyers(data.buyers);
   };
 
   const handleAddBuyer = (buyer: Buyer) => {
-    // handleClearFilters();
+    fetchBuyers();
     setIsBuyerModalOpen(false);
-    setIsModalOpen(true);
   };
 
   const deleteInvoice = (invoice) => {
@@ -515,20 +528,24 @@ const Invoices: React.FC = () => {
       </div>
 
       <CreateInvoiceModal 
-        isOpen={isModalOpen} 
+        isOpen={isModalOpen && !isBuyerModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onAdd={handleAddInvoice}
+        buyers={buyers}
         onAddNewBuyer={() => {
-          setIsModalOpen(false);
           setIsBuyerModalOpen(true);
         }}
       />
       
       <EditInvoiceModal 
-        isOpen={isEditModalOpen && selectedInvoice} 
+        isOpen={isEditModalOpen && selectedInvoice && !isBuyerModalOpen} 
         onClose={() => { setIsEditModalOpen(false); setSelectedInvoice(null); }} 
-        // onUpdate={handleUpdateEntity}
+        onUpdate={handleUpdateEntity}
         invoice={selectedInvoice}
+        buyers={buyers}
+        onAddNewBuyer={() => {
+          setIsBuyerModalOpen(true);
+        }}
       />
 
       <BulkUploadModal 
@@ -549,7 +566,6 @@ const Invoices: React.FC = () => {
         isOpen={isBuyerModalOpen}
         onClose={() => {
           setIsBuyerModalOpen(false);
-          setIsModalOpen(true);
         }}
         onAdd={handleAddBuyer}
       />

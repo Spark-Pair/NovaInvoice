@@ -1014,15 +1014,6 @@ const SRO_SERIAL_OPTIONS = [
   "Region-II"
 ]
 
-interface CreateInvoiceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (invoice) => void;
-  nextInvoiceNumber: string;
-  buyers: Buyer[];
-  onAddNewBuyer: () => void;
-}
-
 const generateId = () => crypto.randomUUID();
 
 const createInitialItem = () => ({
@@ -1051,13 +1042,15 @@ const createInitialItem = () => ({
   totalItemValue: 0,
 });
 
-export const EditInvoiceModal: React.FC<CreateInvoiceModalProps> = ({ 
+export const EditInvoiceModal = ({ 
   isOpen, 
   onClose, 
   onUpdate,
-  invoice
+  invoice,
+  buyers,
+  onAddNewBuyer
 }) => {
-  const [buyers, setBuyers] = useState([]);
+  // const [buyers, setBuyers] = useState([]);
   const [selectedBuyer, setSelectedBuyer] = useState(null);
   const [invoiceData, setInvoiceData] = useState(null);
   
@@ -1075,15 +1068,6 @@ export const EditInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     setInvoiceData(normalizedInvoice);
     setSelectedBuyer(invoice.buyer);
   }, [invoice]);
-
-  useEffect(() => {
-    fetchBuyers();
-  }, [])
-
-  const fetchBuyers = async () => {
-    const { data } = await api.get("/invoices/buyers");
-    setBuyers(data.buyers);
-  }
 
   useEffect(() => {
     if (!invoiceData?.buyerId) return;
@@ -1187,11 +1171,9 @@ export const EditInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   const handleUpdate = async () => {
     if ((!invoiceData?.buyerId && !invoice.buyer) || !invoiceData?.items?.length) return;
 
-    console.log(invoiceData);
-
     const { data } = await api.patch(`/invoices/${invoiceData.id}`, invoiceData);
     
-    // onAdd();
+    onUpdate(data.invoice);
   };
 
   return (
@@ -1232,6 +1214,9 @@ export const EditInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
               </div>
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Buyer Details</h3>
             </div>
+            <Button variant="ghost" icon={<UserPlus size={16} />} className="text-xs h-8 px-3 rounded-lg" onClick={onAddNewBuyer}>
+              Quick Add Buyer
+            </Button>
           </div>
           
           <Select 
