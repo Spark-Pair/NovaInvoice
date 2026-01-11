@@ -27,6 +27,16 @@ export const useAuth = () => {
     }
   };
 
+  const updateSettings = (newSettings) => {
+    if (!user) return;
+    const updatedUser = {
+      ...user,
+      settings: { ...user.settings, ...newSettings }
+    };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   const isAuthorized = useCallback(
     (allowedRoles: string[] = []) => {
       if (!user) return false;
@@ -36,5 +46,5 @@ export const useAuth = () => {
     [user]
   );
 
-  return { user, login, logout, isAuthorized };
+  return { user, login, logout, updateSettings, isAuthorized };
 };

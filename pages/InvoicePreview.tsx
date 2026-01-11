@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BlobProvider, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { Download, Printer, Send, X, Zap, MapPin, Building2, User as UserIcon, Hash, Calendar, CreditCard } from 'lucide-react';
 import { Button } from '@/components/Button';
+import { useAuth } from '@/hooks/useAuth';
 
 /* ---------------- PDF STYLES ---------------- */
 const pdfStyles = StyleSheet.create({
@@ -31,8 +32,66 @@ const pdfStyles = StyleSheet.create({
   grandTotal: { fontWeight: 'bold' },
 });
 
+const isFieldVisible = (
+  configSection = [],
+  key: string
+) => {
+  const field = configSection.find(f => f.key === key);
+  if (!field) return true; // fallback: visible
+  if (field.required) return true;
+  return field.isVisible;
+};
+
 /* ---------------- PDF DOCUMENT ---------------- */
-const InvoiceDocument = ({invoice}) => {
+const InvoiceDocument = ({invoice, previewConfigs}) => {
+  const seller = [
+    { label: 'Business Name', value: invoice.relatedEntity.businessName || '-', show: isFieldVisible(previewConfigs?.business, 'business_name'), },
+    { label: 'NTN', value: invoice.relatedEntity.ntn || '-', show: isFieldVisible(previewConfigs?.business, 'business_ntn'), },
+    { label: 'CNIC', value: invoice.relatedEntity.cnic || '-', show: isFieldVisible(previewConfigs?.business, 'business_cnic'), },
+    { label: 'STRN', value: invoice.relatedEntity.strn || '-', show: isFieldVisible(previewConfigs?.business, 'business_strn'), },
+    { label: 'Address', value: invoice.relatedEntity.address || '-', show: isFieldVisible(previewConfigs?.business, 'business_address'), },
+    { label: 'Province', value: invoice.relatedEntity.province || '-', show: isFieldVisible(previewConfigs?.business, 'business_province'), },
+  ];
+
+  const buyer = [
+    { label: 'Name', value: invoice.buyer.buyerName || '-', show: isFieldVisible(previewConfigs?.buyer, 'buyer_name'), },
+    { label: 'NTN', value: invoice.buyer.ntn || '-', show: isFieldVisible(previewConfigs?.buyer, 'buyer_ntn'), },
+    { label: 'CNIC', value: invoice.buyer.cnic || '-', show: isFieldVisible(previewConfigs?.buyer, 'buyer_cnic'), },
+    { label: 'STRN', value: invoice.buyer.strn || '-', show: isFieldVisible(previewConfigs?.buyer, 'buyer_strn'), },
+    { label: 'Address', value: invoice.buyer.address || '-', show: isFieldVisible(previewConfigs?.buyer, 'buyer_address'), },
+    { label: 'Province', value: invoice.buyer.province || '-', show: isFieldVisible(previewConfigs?.buyer, 'buyer_province'), },
+    { label: 'Registration Type', value: invoice.buyer.registrationType || '-', show: isFieldVisible(previewConfigs?.buyer, 'registration_type'), },
+  ];
+
+  const meta = [
+    { label: 'Invoice No', value: invoice.invoiceNumber || '-', show: isFieldVisible(previewConfigs?.meta, 'invoice_number'), },
+    { label: 'Invoice Date', value: invoice.date || '-', show: isFieldVisible(previewConfigs?.meta, 'invoice_date'), },
+    { label: 'Reference No', value: invoice.referenceNumber || '-', show: isFieldVisible(previewConfigs?.meta, 'reference_no'), },
+    { label: 'Salesman', value: invoice.salesman || '-', show: isFieldVisible(previewConfigs?.meta, 'salesman'), },
+  ];
+
+  const tableColumns = [
+    { label: 'UOM', key: 'uom', show: isFieldVisible(previewConfigs?.items, 'uom'), },
+    { label: 'HS Code', key: 'hsCode', show: isFieldVisible(previewConfigs?.items, 'hs_code'), },
+    { label: 'Description', key: 'description', show: isFieldVisible(previewConfigs?.items, 'description'), },
+    { label: 'Sale Type', key: 'saleType', show: isFieldVisible(previewConfigs?.items, 'sale_type'), },
+    { label: 'Qty', key: 'quantity', show: isFieldVisible(previewConfigs?.items, 'quantity'), },
+    { label: 'Rate', key: 'rate', show: isFieldVisible(previewConfigs?.items, 'rate'), },
+    { label: 'Unit Price', key: 'unitPrice', show: isFieldVisible(previewConfigs?.items, 'unit_price'), },
+    { label: 'Sales Value Exc Tax', key: 'salesValue', show: isFieldVisible(previewConfigs?.items, 'sales_value_exc_tax'), },
+    { label: 'Discount', key: 'discount', show: isFieldVisible(previewConfigs?.items, 'discount'), },
+    { label: 'Other Discount', key: 'otherDiscount', show: isFieldVisible(previewConfigs?.items, 'other_discount'), },
+    { label: 'Trade Discount', key: 'tradeDiscount', show: isFieldVisible(previewConfigs?.items, 'trade_discount'), },
+    { label: 'Sales Tax', key: 'salesTax', show: isFieldVisible(previewConfigs?.items, 'sales_tax'), },
+    { label: 'Tax Withheld', key: 'salesTaxWithheld', show: isFieldVisible(previewConfigs?.items, 'tax_withheld'), },
+    { label: 'Extra Tax', key: 'extraTax', show: isFieldVisible(previewConfigs?.items, 'extra_tax'), },
+    { label: 'Further Tax', key: 'furtherTax', show: isFieldVisible(previewConfigs?.items, 'further_tax'), },
+    { label: 'FED', key: 'federalExciseDuty', show: isFieldVisible(previewConfigs?.items, 'fed'), },
+    { label: 'SRO Schedule', key: 'sroScheduleNo', show: isFieldVisible(previewConfigs?.items, 'sro_schedule'), },
+    { label: 'SRO Serial', key: 'sroItemSerialNo', show: isFieldVisible(previewConfigs?.items, 'sro_serial'), },
+    { label: 'Total', key: 'totalItemValue', show: isFieldVisible(previewConfigs?.items, 'total') },
+  ]
+
   const summary = {
     subtotal: invoice.items.reduce((acc, item) => acc + item.salesValue, 0).toFixed(2),
     totalDiscount: invoice.items.reduce((acc, item) => acc + item.discount, 0).toFixed(2),
@@ -47,6 +106,21 @@ const InvoiceDocument = ({invoice}) => {
     totalT236g: invoice.items.reduce((acc, item) => acc + item.t236g, 0).toFixed(2),
     totalT236h: invoice.items.reduce((acc, item) => acc + item.t236h, 0).toFixed(2),
   }
+
+  const totals = [
+    { label: 'Subtotal', value: summary.subtotal || '-', show: isFieldVisible(previewConfigs?.totals, 'subtotal'), },
+    { label: 'Total Discount', value: summary.totalDiscount || '-', show: isFieldVisible(previewConfigs?.totals, 'total_discount'), },
+    { label: 'Total Other Discount', value: summary.totalOtherDiscount || '-', show: isFieldVisible(previewConfigs?.totals, 'total_other_discount'), },
+    { label: 'Total Trade Discount', value: summary.totalTradeDiscount || '-', show: isFieldVisible(previewConfigs?.totals, 'total_trade_discount'), },
+    { label: 'Total Taxes (Charged)', value: summary.totalTaxes || '-', show: isFieldVisible(previewConfigs?.totals, 'total_taxes'), },
+    { label: 'Sales Tax (Applicable)', value: summary.totalSalesTax || '-', show: isFieldVisible(previewConfigs?.totals, 'sales_tax_applicable'), },
+    { label: 'Extra Tax', value: summary.totalExtraTax || '-', show: isFieldVisible(previewConfigs?.totals, 'extra_tax_total'), },
+    { label: 'Further Tax', value: summary.totalFurtherTax || '-', show: isFieldVisible(previewConfigs?.totals, 'further_tax_total'), },
+    { label: 'FED Payable', value: summary.totalFed || '-', show: isFieldVisible(previewConfigs?.totals, 'fed_payable'), },
+    { label: 'Sales Tax Withheld at Source', value: summary.totalTaxWithheld || '-', show: isFieldVisible(previewConfigs?.totals, 'sales_tax_withheld'), },
+    { label: '236G', value: summary.totalT236g || '-', show: isFieldVisible(previewConfigs?.totals, 'tax_236g'), },
+    { label: '236H', value: summary.totalT236h || '-', show: isFieldVisible(previewConfigs?.totals, 'tax_236h'), },
+  ];
   
   return (
     <Document>
@@ -61,63 +135,23 @@ const InvoiceDocument = ({invoice}) => {
           <View>
             <Text style={pdfStyles.label}>SELLER</Text>
 
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>Business Name:</Text>
-              <Text>{invoice.relatedEntity.businessName || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>NTN:</Text>
-              <Text>{invoice.relatedEntity.ntn || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>CNIC:</Text>
-              <Text>{invoice.relatedEntity.cnic || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>STRN:</Text>
-              <Text>{invoice.relatedEntity.strn || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>Address:</Text>
-              <Text>{invoice.relatedEntity.address || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>Province:</Text>
-              <Text>{invoice.relatedEntity.province || '-'}</Text>
-            </View>
+            {seller && seller.map((field) => field.show && (
+              <View style={pdfStyles.row}>
+                <Text style={pdfStyles.rowLabel}>{field.label}:</Text>
+                <Text>{field.value}</Text>
+              </View>
+            ))}
           </View>
           
           <View>
             <Text style={pdfStyles.label}>BUYER</Text>
 
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>Name:</Text>
-              <Text>{invoice.buyer.buyerName || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>NTN:</Text>
-              <Text>{invoice.buyer.ntn || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>CNIC:</Text>
-              <Text>{invoice.buyer.cnic || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>STRN:</Text>
-              <Text>{invoice.buyer.strn || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>Address:</Text>
-              <Text>{invoice.buyer.address || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>Province:</Text>
-              <Text>{invoice.buyer.province || '-'}</Text>
-            </View>
-            <View style={pdfStyles.row}>
-              <Text style={pdfStyles.rowLabel}>Registration Type:</Text>
-              <Text>{invoice.buyer.registrationType || '-'}</Text>
-            </View>
+            {buyer && buyer.map((field) => field.show && (
+              <View style={pdfStyles.row}>
+                <Text style={pdfStyles.rowLabel}>{field.label}:</Text>
+                <Text>{field.value}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -126,68 +160,38 @@ const InvoiceDocument = ({invoice}) => {
         <View style={pdfStyles.section}>
           <Text style={pdfStyles.label}>INVOICE DETAILS</Text>
 
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Invoice No:</Text>
-            <Text>{invoice.invoiceNumber || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Invoice Date:</Text>
-            <Text>{invoice.date || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Reference No:</Text>
-            <Text>{invoice.referenceNumber || '-'}</Text>
-          </View>
-          <View style={pdfStyles.row}>
-            <Text style={pdfStyles.rowLabel}>Salesman:</Text>
-            <Text>{invoice.salesman || '-'}</Text>
-          </View>
+          {meta && meta.map((field) => field.show && (
+            <View style={pdfStyles.row}>
+              <Text style={pdfStyles.rowLabel}>{field.label}:</Text>
+              <Text>{field.value}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={pdfStyles.table}>
           <View style={[pdfStyles.tableRow, pdfStyles.tableHeader]} fixed>
-            <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>UOM</Text>
-            <Text style={pdfStyles.column}>HS Code</Text>
-            <Text style={pdfStyles.column}>Description</Text>
-            <Text style={pdfStyles.column}>Sale Type</Text>
-            <Text style={pdfStyles.column}>Qty</Text>
-            <Text style={pdfStyles.column}>Rate</Text>
-            <Text style={pdfStyles.column}>Unit Price</Text>
-            <Text style={pdfStyles.column}>Sales Value Exc Tax</Text>
-            <Text style={pdfStyles.column}>Discount</Text>
-            <Text style={pdfStyles.column}>Other Discount</Text>
-            <Text style={pdfStyles.column}>Trade Discount</Text>
-            <Text style={pdfStyles.column}>Sales Tax</Text>
-            <Text style={pdfStyles.column}>Tax Withheld</Text>
-            <Text style={pdfStyles.column}>Extra Tax</Text>
-            <Text style={pdfStyles.column}>Further Tax</Text>
-            <Text style={pdfStyles.column}>FED</Text>
-            <Text style={pdfStyles.column}>SRO Schedule</Text>
-            <Text style={pdfStyles.column}>SRO Serial</Text>
-            <Text style={pdfStyles.column}>Total</Text>
+            {tableColumns.filter(col => col.show).map((col, index) => (
+              <Text key={col.key} style={[pdfStyles.column, index === 0 ? pdfStyles.firstColumn : {}]}>
+                {col.label}
+              </Text>
+            ))}
           </View>
 
-          {invoice.items.map((item) => (
+          {invoice.items.map(item => (
             <View key={item.id} style={pdfStyles.tableRow} wrap={false}>
-              <Text style={[pdfStyles.column, pdfStyles.firstColumn]}>{item.uom}</Text>
-              <Text style={pdfStyles.column}>{item.hsCode}</Text>
-              <Text style={pdfStyles.column}>{item.description}</Text>
-              <Text style={pdfStyles.column}>{item.saleType}</Text>
-              <Text style={pdfStyles.column}>{item.quantity}</Text>
-              <Text style={pdfStyles.column}>{item.rate}</Text>
-              <Text style={pdfStyles.column}>{item.unitPrice}</Text>
-              <Text style={pdfStyles.column}>{item.salesValue}</Text>
-              <Text style={pdfStyles.column}>{item.discount}</Text>
-              <Text style={pdfStyles.column}>{item.otherDiscount}</Text>
-              <Text style={pdfStyles.column}>{item.tradeDiscount}</Text>
-              <Text style={pdfStyles.column}>{item.salesTax}</Text>
-              <Text style={pdfStyles.column}>{item.salesTaxWithheld}</Text>
-              <Text style={pdfStyles.column}>{item.extraTax}</Text>
-              <Text style={pdfStyles.column}>{item.furtherTax}</Text>
-              <Text style={pdfStyles.column}>{item.federalExciseDuty}</Text>
-              <Text style={pdfStyles.column}>{item.sroScheduleNo}</Text>
-              <Text style={pdfStyles.column}>{item.sroItemSerialNo}</Text>
-              <Text style={pdfStyles.column}>{item.totalItemValue}</Text>
+              {tableColumns
+                .filter(col => col.show)
+                .map((col, index) => (
+                  <Text
+                    key={col.key}
+                    style={[
+                      pdfStyles.column,
+                      index === 0 ? pdfStyles.firstColumn : {},
+                    ]}
+                  >
+                    {item[col.key] ?? '-'}
+                  </Text>
+                ))}
             </View>
           ))}
         </View>
@@ -197,54 +201,13 @@ const InvoiceDocument = ({invoice}) => {
             <View>
               <Text style={pdfStyles.totalHeading}>INVOICE SUMMARY</Text>
             </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Subtotal:</Text>
-              <Text>{summary.subtotal}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Total Discount:</Text>
-              <Text>{summary.totalDiscount}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Total Other Discount:</Text>
-              <Text>{summary.totalOtherDiscount}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Total Trade Discount:</Text>
-              <Text>{summary.totalTradeDiscount}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Total Taxes (Charged):</Text>
-              <Text>{summary.totalTaxes}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Sales Tax (Applicable):</Text>
-              <Text>{summary.totalSalesTax}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Extra Tax:</Text>
-              <Text>{summary.totalExtraTax}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Further Tax:</Text>
-              <Text>{summary.totalFurtherTax}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>FED Payable:</Text>
-              <Text>{summary.totalFed}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>Sales Tax Withheld at Source:</Text>
-              <Text>{summary.totalTaxWithheld}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>236G:</Text>
-              <Text>{summary.totalT236g}</Text>
-            </View>
-            <View style={pdfStyles.totalRow}>
-              <Text>236H:</Text>
-              <Text>{summary.totalT236h}</Text>
-            </View>
+
+            {totals && totals.map((field) => field.show && (
+              <View style={pdfStyles.totalRow}>
+                <Text>{field.label}:</Text>
+                <Text>{field.value}</Text>
+              </View>
+            ))}
 
             <View style={[pdfStyles.hr, {marginVertical: 8}]} />
 
@@ -261,8 +224,13 @@ const InvoiceDocument = ({invoice}) => {
 
 /* ---------------- REACT PREVIEW ---------------- */
 export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, onClose }) => {
+  const { user } = useAuth();
+  const previewConfigs = user.settings?.configs?.invoicePreview || {};
+  console.log(previewConfigs);
+  
+  
   return (
-    <BlobProvider document={<InvoiceDocument invoice={invoice} />}>
+    <BlobProvider document={<InvoiceDocument invoice={invoice} previewConfigs={previewConfigs} />}>
       {({ url, loading, error }) => {
         if (loading) return <p>Loading invoice preview…</p>;
         if (error) return <p>Failed to load invoice</p>;
