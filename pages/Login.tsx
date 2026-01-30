@@ -50,7 +50,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         <div className="space-y-4">
           <input
-            className="w-full px-4 py-3 rounded-xl border"
+            className="w-full px-4 py-3 rounded-xl border lowercase"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}

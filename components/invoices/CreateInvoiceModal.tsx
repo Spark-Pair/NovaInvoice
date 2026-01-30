@@ -1150,6 +1150,8 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     };
   };
 
+  const clamp = (v) => Math.max(0, Number(v) || 0)
+
   const updateItem = (id: string, updates) => {
     setInvoiceData(prev => ({
       ...prev,
@@ -1317,7 +1319,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                     <Select label="Sale Type *" options={SALE_TYPES} value={item.saleType} onChange={val => updateItem(item.id, { saleType: val })} />
                   </div>
                   <div className="md:col-span-2">
-                    <Input label="Quantity *" type="number" step="0.01" value={item.quantity} onChange={e => updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })} />
+                    <Input label="Quantity *" type="number" step="0.01" value={item.quantity} onChange={e => updateItem(item.id, { quantity: clamp(e.target.value) })} />
                   </div>
                 </div>
 
@@ -1329,7 +1331,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                     value={item.rate} 
                     onChange={val => { updateItem(item.id, { rate: val }) }} 
                   />
-                  <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: clamp(e.target.value) })} />
 
                   <Input 
                     readOnly 
@@ -1338,20 +1340,20 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                     className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500"
                     value={item.salesValue} 
                   />
-                  <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: clamp(e.target.value) })} />
+                  <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: clamp(e.target.value) })} />
                   
-                  <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: clamp(e.target.value) })} />
+                  <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: clamp(e.target.value) })} />
+                  <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: clamp(e.target.value) })} />
                   
-                  <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: parseFloat(e.target.value) || 0 })} />
-                  <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: clamp(e.target.value) })} />
+                  <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: clamp(e.target.value) })} />
+                  <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: clamp(e.target.value) })} />
                   
-                  <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: parseFloat(e.target.value) || 0 })} />
+                  <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: clamp(e.target.value) })} />
+                  <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: clamp(e.target.value) })} />
+                  <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: clamp(e.target.value) })} />
                   
                   <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
                   <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />

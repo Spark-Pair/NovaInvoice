@@ -150,7 +150,8 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input 
                       label="Username *" 
-                      placeholder="admin_entity" 
+                      placeholder="admin_entity"
+                      className="lowercase"
                       value={formData.username}
                       onChange={e => setFormData({...formData, username: e.target.value})}
                       icon={<UserIcon size={16} className="text-slate-400" />}
@@ -169,7 +170,8 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
 
             <div className="md:col-span-2">
               <Input 
-                label="Business Name *" 
+                label="Business Name *"
+                className="capitalize"
                 placeholder="Enter legally registered name" 
                 value={formData.businessName}
                 onChange={e => setFormData({...formData, businessName: e.target.value})}
