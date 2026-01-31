@@ -14,7 +14,8 @@ import {
   Eye,
   Power,
   KeyRound,
-  User as UserIcon
+  User as UserIcon,
+  MousePointer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
@@ -29,8 +30,11 @@ import { EntityFilterModal } from '../components/entities/EntityFilterModal';
 import { Entity } from '../types';
 import api from '@/axios';
 import Loader from '@/components/Loader';
+import { useAuth } from "@/hooks/useAuth";
 
 const Entities: React.FC = () => {
+  const { setUsingEntity } = useAuth();
+
   const [entities, setEntities] = useState<Entity[]>([]);
   const [totalPages, setTotalPages] = useState<Number>(0);
   const [totalRecords, setTotalRecords] = useState<Number>(0);
@@ -455,6 +459,9 @@ const Entities: React.FC = () => {
                             </button>
                             <button onClick={() => {setSelectedEntity(entity); setIsResetPasswordModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                               <KeyRound size={14} /> Reset Password
+                            </button>
+                            <button onClick={() => {setUsingEntity(entity); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                              <MousePointer size={14} /> Select this entity
                             </button>
                             <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1 mx-2" />
                             <button 

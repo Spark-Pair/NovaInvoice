@@ -17,7 +17,7 @@ import Settings from './pages/Settings';
 import NotAuthorized from './pages/NotAuthorized';
 
 export default function App() {
-  const { user, login, logout, isAuthorized } = useAuth();
+  const { user, login, logout, isAuthorized, setUsingEntity } = useAuth();
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
 
   useEffect(() => {
@@ -49,22 +49,22 @@ export default function App() {
                 path="*"
                 element={
                   <div className="flex bg-slate-50 dark:bg-[#080C1C] text-slate-900 dark:text-slate-100 transition-colors duration-300 dotted-bg">
-                    <Sidebar user={user} onLogout={logout} theme={theme} toggleTheme={toggleTheme} />
+                    <Sidebar user={user} onLogout={logout} onDeselectEntity={() => setUsingEntity(null)} theme={theme} toggleTheme={toggleTheme} />
                     <main className="flex-1 ml-72 min-h-screen">
                       <div className={`p-8 pb-5 h-screen`}>
                         <Routes>
-                          <Route path="/admin-dashboard" element={ isAuthorized(['admin']) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
-                          <Route path="/dashboard" element={ isAuthorized(['client']) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/admin-dashboard" element={ isAuthorized({ roles: 'admin' }) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/dashboard" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="/entities" element={ isAuthorized(['admin']) ? <Entities /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/entities" element={ isAuthorized({ roles: 'admin' }) ? <Entities /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="/buyers" element={ isAuthorized(['client']) ? <Buyers /> : <Navigate to="/not-authorized" /> } />
-                          <Route path="/invoices" element={ isAuthorized(['client']) ? <Invoices /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/buyers" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Buyers /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/invoices" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Invoices /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="/admin-settings" element={ isAuthorized(['admin']) ? <Settings /> : <Navigate to="/not-authorized" /> } />
-                          <Route path="/settings" element={ isAuthorized(['client']) ? <Settings /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/admin-settings" element={ isAuthorized({ roles: 'admin' }) ? <Settings /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/settings" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Settings /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="*" element={ <Navigate to={ isAuthorized(['admin']) ? "/admin-dashboard" : isAuthorized(['client']) ? "/dashboard" : "" } /> } />
+                          <Route path="*" element={ <Navigate to={ isAuthorized({ roles: 'admin' }) ? "/admin-dashboard" : isAuthorized(['client']) ? "/dashboard" : "" } /> } />
                         </Routes>
                       </div>
                     </main>
