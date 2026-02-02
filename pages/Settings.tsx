@@ -119,10 +119,10 @@ const Settings: React.FC = () => {
       const { data } = await api.get('/users/settings');
       if (!data) return;
       
-      if (data.configs) {
-        console.log(data.configs);
-        
-        setConfigs(data.configs);
+      if (data.configs && Object.keys(data.configs).length > 0) {
+        setConfigs({ ...SETTINGS_CONFIG, ...data.configs });
+      } else {
+        setConfigs(SETTINGS_CONFIG);
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -148,7 +148,7 @@ const Settings: React.FC = () => {
 
   const openConfigModal = (configType) => {
     setActiveConfigKey(configType);
-  }
+  };
 
   return (
     <>

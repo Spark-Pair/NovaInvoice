@@ -1119,15 +1119,23 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     return (salesValue * rate) / 100;
   };
 
-  const calculateItem = (item, recalcSalesTax = false) => {
+  const calculateItem = (item, shouldCalcSalesTax) => {
     const quantity = num(item.quantity);
     const unitPrice = num(item.unitPrice);
 
     const salesValue = quantity * unitPrice;
 
-    const salesTax = recalcSalesTax
-      ? calculateSalesTax(salesValue, extractPercent(item.rate))
-      : 0;
+    let salesTax = 0;
+
+    if (typeof item.rate === 'string') {
+      if (item.rate.trim().endsWith('%') && shouldCalcSalesTax) {
+        salesTax = calculateSalesTax(salesValue, extractPercent(item.rate));
+      } else {
+        salesTax = Number(item.salesTax); // fixed amount
+      }
+    } else {
+      salesTax = Number(item.rate); // in case rate is already numeric
+    }
 
     const totalItemValue =
       salesValue +
@@ -1142,23 +1150,31 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
       num(item.salesTaxWithheld) -
       num(item.tradeDiscount);
 
-    return {
-      ...item,
-      salesValue,
-      salesTax,
-      totalItemValue,
-    };
+    return { ...item, salesValue, salesTax, totalItemValue };
   };
 
   const clamp = (v) => Math.max(0, Number(v) || 0)
 
-  const updateItem = (id: string, updates) => {
+  const updateItem = (id: string, updates, shouldCalcSalesTax=false) => {
     setInvoiceData(prev => ({
       ...prev,
       items: (prev.items || []).map(item => {
         if (item.id !== id) return item;
 
-        const updatedItem = { ...item, ...updates };
+        let updatedItem = { ...item, ...updates };
+
+        const quantity = num(updatedItem.quantity);
+        const unitPriceChanged = 'unitPrice' in updates;
+        const salesValueChanged = 'salesValue' in updates;
+
+        // Auto-calc logic
+        if (quantity && unitPriceChanged) {
+          // quantity + unitPrice → calculate salesValue
+          updatedItem.salesValue = quantity * num(updatedItem.unitPrice);
+        } else if (quantity && salesValueChanged) {
+          // quantity + salesValue → calculate unitPrice
+          updatedItem.unitPrice = num(updatedItem.salesValue) / quantity;
+        }
 
         const rateHasPercentage =
           typeof updatedItem.rate === 'string' &&
@@ -1166,11 +1182,9 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
         const shouldRecalcSalesTax =
           rateHasPercentage &&
-          ('rate' in updates ||
-            'quantity' in updates ||
-            'unitPrice' in updates);
+          ('rate' in updates || 'quantity' in updates || 'unitPrice' in updates || 'salesValue' in updates);
 
-        return calculateItem(updatedItem, shouldRecalcSalesTax);
+        return calculateItem(updatedItem, shouldCalcSalesTax);
       }),
     }));
   };
@@ -1329,15 +1343,14 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
                     label="Rate *" 
                     options={RATE_OPTIONS} 
                     value={item.rate} 
-                    onChange={val => { updateItem(item.id, { rate: val }) }} 
+                    onChange={val => { updateItem(item.id, { rate: val }, true) }} 
                   />
                   <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: clamp(e.target.value) })} />
 
-                  <Input 
-                    readOnly 
+                  <Input
                     label="Sales Value (Excl. Tax)"
                     specialLabel="Auto-Calc"
-                    className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500"
+                    onChange={e => updateItem(item.id, { salesValue: clamp(e.target.value) })}
                     value={item.salesValue} 
                   />
                   <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: clamp(e.target.value) })} />

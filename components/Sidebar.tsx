@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // Link is DOM-specific, so it stays in react-router-dom
 import { Link } from 'react-router-dom';
 // useLocation is core logic, so we import from react-router to ensure compatibility
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -30,6 +30,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, theme, toggleTheme }) => {
   const { user, isAuthorized, usingEntity } = useAuth();
+  const navigate = useNavigate();
 
   const location = useLocation();
   const [showProfileActions, setShowProfileActions] = useState(false);
@@ -46,7 +47,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
     { icon: <Users size={20} />, label: 'Buyers', path: '/buyers', show: isAuthorized({ roles: 'client' }) },
     { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices', show: isAuthorized({ roles: 'client' }) },
 
-    { icon: <Settings size={20} />, label: 'Settings', path: '/admin-settings', show: isAuthorized({ roles: 'admin' }) },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings', show: isAuthorized({ roles: 'client' }) },
   ];
 
@@ -226,7 +226,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
                           <span>Account Profile</span>
                         </button>
                         <button 
-                          onClick={onDeselectEntity}
+                          onClick={() => {
+                            navigate("/entities");
+                            setTimeout(() => onDeselectEntity(), 50);
+                          }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors text-sm font-semibold"
                         >
                           <LogOut size={18} />

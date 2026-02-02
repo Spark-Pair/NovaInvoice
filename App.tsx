@@ -61,7 +61,6 @@ export default function App() {
                           <Route path="/buyers" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Buyers /> : <Navigate to="/not-authorized" /> } />
                           <Route path="/invoices" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Invoices /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="/admin-settings" element={ isAuthorized({ roles: 'admin' }) ? <Settings /> : <Navigate to="/not-authorized" /> } />
                           <Route path="/settings" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Settings /> : <Navigate to="/not-authorized" /> } />
 
                           <Route path="*" element={ <Navigate to={ isAuthorized({ roles: 'admin' }) ? "/admin-dashboard" : isAuthorized(['client']) ? "/dashboard" : "" } /> } />

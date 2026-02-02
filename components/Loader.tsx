@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion';
 
-export default function Loader() {
+export default function Loader({label="Loading data..."}) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-4">
         <div className="flex gap-2">
@@ -23,7 +23,7 @@ export default function Loader() {
         ))}
         </div>
         <p className="text-slate-500 font-medium animate-pulse">
-        Loading data...
+        { label }
         </p>
     </div>
   )

@@ -34,12 +34,6 @@ import api from '@/axios';
 import Loader from '@/components/Loader';
 import { EditInvoiceModal } from "@/components/invoices/EditInvoiceModal";
 
-// Demo Data
-const MOCK_BUYERS: Buyer[] = [
-  { id: '1', name: 'Global Tech Corp', registrationType: 'Registered', ntn: '8877665-4', cnic: '42101-5555555-1', strn: '12-00-1122-334-55', province: 'PUNJAB', address: 'Plot 12, Industrial Area, Lahore', status: 'Active', createdAt: '2024-01-20' },
-  { id: '2', name: 'Greenway Retail', registrationType: 'Unregistered', ntn: '1122334-5', cnic: '42201-4444444-2', province: 'SINDH', address: 'Shop 4, Market Square, Karachi', status: 'Active', createdAt: '2024-02-15' },
-];
-
 const Invoices: React.FC = () => {
   const [invoices, setInvoices] = useState([]);
   const [totalPages, setTotalPages] = useState<Number>(0);
@@ -49,7 +43,7 @@ const Invoices: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);        // initial full page
   const [isTableLoading, setIsTableLoading] = useState(false); // pagination only
 
-  const [buyers, setBuyers] = useState<Buyer[]>(MOCK_BUYERS);
+  const [buyers, setBuyers] = useState([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -320,7 +314,7 @@ const Invoices: React.FC = () => {
             >
               Upload
             </Button>
-            <Button onClick={() => setIsModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-xl shadow-indigo-500/10 h-12">
+            <Button disabled={!buyers} onClick={() => setIsModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-xl shadow-indigo-500/10 h-12">
               New Invoice
             </Button>
           </div>

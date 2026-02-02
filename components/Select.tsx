@@ -28,6 +28,8 @@ export const Select: React.FC<SelectProps> = ({
     opt.toLowerCase().includes(search.toLowerCase())
   );
 
+  const currentIndex = filteredOptions.findIndex(opt => opt === value);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -39,14 +41,59 @@ export const Select: React.FC<SelectProps> = ({
   }, []);
 
   return (
-    <div className={`flex flex-col gap-1.5 w-full relative ${className}`} ref={containerRef}>
-      {label && <label className="text-sm font-semibold text-slate-500 ml-1">{label}</label>}
-      
-      <div 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`group flex items-center justify-between px-4 py-2.5 rounded-xl border cursor-pointer transition-all duration-200 bg-white dark:bg-slate-900 ${
-          isOpen 
-            ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md' 
+    <div
+      ref={containerRef}
+      onBlur={() => {
+        requestAnimationFrame(() => {
+          if (
+            containerRef.current &&
+            !containerRef.current.contains(document.activeElement)
+          ) {
+            setIsOpen(false);
+          }
+        });
+      }}
+      onKeyDown={(e) => {
+        if (!filteredOptions.length) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const nextIndex =
+            currentIndex < filteredOptions.length - 1
+              ? currentIndex + 1
+              : 0;
+
+          onChange(filteredOptions[nextIndex]);
+        }
+
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prevIndex =
+            currentIndex > 0
+              ? currentIndex - 1
+              : filteredOptions.length - 1;
+
+          onChange(filteredOptions[prevIndex]);
+        }
+      }}
+      className={`flex flex-col gap-1.5 w-full relative ${className}`}
+    >
+      {label && (
+        <label className="text-sm font-semibold text-slate-500 ml-1">
+          {label}
+        </label>
+      )}
+
+      <div
+        role="button"
+        tabIndex={0}
+        onFocus={() => setIsOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setIsOpen(false);
+        }}
+        className={`group flex items-center justify-between px-4 py-2.5 rounded-xl border cursor-pointer transition-all duration-200 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+          isOpen
+            ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md'
             : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'
         }`}
       >
