@@ -4,6 +4,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { User } from '../types';
 import api from '@/axios';
+import { useAppToast } from '@/components/toast/toast';
 
 interface LoginProps {
   onLogin: (u: User) => void;
@@ -14,6 +15,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const toast = useAppToast();
 
   const handleLogin = async () => {
     try {
@@ -26,6 +29,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       });
 
       onLogin(res.data); // {_id, username, token}
+      toast.success("Logged in successfully!")
     } catch (err: any) {
       setError(
         err.response?.data?.message || 'Login failed'

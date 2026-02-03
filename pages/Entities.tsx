@@ -31,9 +31,11 @@ import { Entity } from '../types';
 import api from '@/axios';
 import Loader from '@/components/Loader';
 import { useAuth } from "@/hooks/useAuth";
+import { useAppToast } from "@/components/toast/toast";
 
 const Entities: React.FC = () => {
   const { setUsingEntity } = useAuth();
+  const toast = useAppToast()
 
   const [entities, setEntities] = useState<Entity[]>([]);
   const [totalPages, setTotalPages] = useState<Number>(0);

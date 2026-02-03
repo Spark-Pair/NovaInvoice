@@ -8,6 +8,7 @@ import { InvoiceItem, Buyer } from '../../types';
 import { Plus, Trash2, UserPlus, Calculator, ShoppingCart, FileText, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '@/axios';
+import Loader from '../Loader';
 
 // Fix: Use 'as const' to ensure these values are treated as specific literals rather than just strings
 const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Credit Note', 'Debit Note'] as const;
@@ -1094,21 +1095,27 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     buyerId: '',
     items: [createInitialItem()],
   });
+  
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!invoiceData.buyerId) return;
 
-    const fetchBuyerDetails = async () => {
-      try {
-        const { data } = await api.get(`/invoices/buyers/${invoiceData.buyerId}`);
-        setSelectedBuyer(data.buyer); // store the detailed info
-      } catch (err) {
-        console.error("Failed to fetch buyer details:", err);
-      }
-    };
-
     fetchBuyerDetails();
   }, [invoiceData.buyerId]);
+
+  const fetchBuyerDetails = async () => {
+    setIsLoading(true);
+
+    try {
+      const { data } = await api.get(`/invoices/buyers/${invoiceData.buyerId}`);
+      setSelectedBuyer(data.buyer); // store the detailed info
+    } catch (err) {
+      console.error("Failed to fetch buyer details:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const num = (v: any) => Number(v) || 0;
 
@@ -1213,194 +1220,259 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   const handleCreate = async () => {
     if (!invoiceData.buyerId || !invoiceData.items?.length) return;
 
-    const { data } = await api.post('/invoices', invoiceData);
-    
-    onAdd(data.invoice);
+    setIsLoading(true);
+    try {
+      const payload = {
+        ...invoiceData,
+        items: invoiceData.items.map(item => ({
+          ...item,
+          sroScheduleNo:
+            item.sroScheduleNo === SRO_SCHEDULE_OPTIONS[0]
+              ? ""
+              : item.sroScheduleNo,
+          sroItemSerialNo:
+            item.sroItemSerialNo === SRO_SERIAL_OPTIONS[0]
+              ? ""
+              : item.sroItemSerialNo,
+        })),
+      };
+
+      const { data } = await api.post('/invoices', payload);
+      onAdd(data.invoice);
+    } catch (error) {
+      console.error("Failed to create Invoice", error)
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const validInvoice = useMemo(() => {
+    // ---------- Invoice level ----------
+    if (!invoiceData.invoiceNumber?.trim()) return false;
+    if (!invoiceData.date) return false;
+    if (!invoiceData.documentType) return false;
+    if (!invoiceData.buyerId) return false;
+
+    // ---------- Items level ----------
+    if (!invoiceData.items?.length) return false;
+
+    for (const item of invoiceData.items) {
+      if (!item.hsCode?.trim()) return false;
+      if (!item.description?.trim()) return false;
+      if (!item.saleType || item.saleType === SALE_TYPES[0]) return false;
+
+      if (Number(item.quantity) < 1) return false;
+      if (!item.uom || item.uom === UOM_OPTIONS[0]) return false;
+      if (!item.rate || item.rate === RATE_OPTIONS[0]) return false;
+
+      if (Number(item.unitPrice) < 1) return false;
+      if (Number(item.salesValue) < 1) return false;
+
+      // Conditional SRO rules
+      if (item.saleType === SALE_TYPES[1]) {
+        if (!item.sroScheduleNo || item.sroScheduleNo === SRO_SCHEDULE_OPTIONS[0]) {
+          return false;
+        }
+        if (!item.sroItemSerialNo || item.sroItemSerialNo === SRO_SERIAL_OPTIONS[0]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }, [invoiceData]);
+
   return (
-    <Modal size="5xl" isOpen={isOpen} onClose={onClose} title="Create Professional Invoice">
-      <div className="space-y-8 h-[80vh] overflow-y-auto pr-4 custom-scrollbar scroll-smooth">
-        
-        {/* Section 1: Basic Info */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center">
-              <FileText size={18} />
-            </div>
-            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Invoice Information</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Input label="Invoice Number *" placeholder="Invoice Number" value={invoiceData.invoiceNumber} onChange={e => setInvoiceData({...invoiceData, invoiceNumber: e.target.value})} />
-            <Input label="Invoice Date *" type="date" value={invoiceData.issueDate} onChange={e => setInvoiceData({...invoiceData, issueDate: e.target.value})} />
-            <Input label="Reference Number" placeholder="Optional" value={invoiceData.referenceNumber} onChange={e => setInvoiceData({...invoiceData, referenceNumber: e.target.value})} />
-            <Input label="Salesman" placeholder="Salesman" value={invoiceData.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
-            <div className="col-span-2">
-              {/* Fix: casting the Select value change to satisfy the strict union type of Invoice['documentType'] */}
-              <Select 
-                label="Document Type" 
-                options={[...DOCUMENT_TYPES]} 
-                value={invoiceData.documentType || DOCUMENT_TYPES[0]} 
-                onChange={val => setInvoiceData({...invoiceData, documentType: val})} 
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Buyer Selection */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 flex items-center justify-center">
-                <UserIcon size={18} />
-              </div>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Buyer Details</h3>
-            </div>
-            <Button variant="ghost" icon={<UserPlus size={16} />} className="text-xs h-8 px-3 rounded-lg" onClick={onAddNewBuyer}>
-              Quick Add Buyer
-            </Button>
-          </div>
+    <>
+      <Modal size="5xl" isOpen={isOpen} onClose={onClose} title="Create Professional Invoice">
+        <div className="space-y-8 h-[80vh] overflow-y-auto pr-4 custom-scrollbar scroll-smooth">
           
-          <Select 
-            placeholder="Select a registered buyer..."
-            options={buyers.map(b => b.buyerName)}
-            value={selectedBuyer?.buyerName || ''}
-            onChange={val => {
-              const b = buyers.find(x => x.buyerName === val);
-              setInvoiceData({...invoiceData, buyerId: b?._id || ''});
-            }}
-          />
+          {/* Section 1: Basic Info */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center">
+                <FileText size={18} />
+              </div>
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Invoice Information</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Input label="Invoice Number *" placeholder="Invoice Number" value={invoiceData.invoiceNumber} onChange={e => setInvoiceData({...invoiceData, invoiceNumber: e.target.value})} />
+              <Input label="Invoice Date *" type="date" value={invoiceData.issueDate} onChange={e => setInvoiceData({...invoiceData, issueDate: e.target.value})} />
+              <Input label="Reference Number" placeholder="Optional" value={invoiceData.referenceNumber} onChange={e => setInvoiceData({...invoiceData, referenceNumber: e.target.value})} />
+              <Input label="Salesman" placeholder="Salesman" value={invoiceData.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
+              <div className="col-span-2">
+                {/* Fix: casting the Select value change to satisfy the strict union type of Invoice['documentType'] */}
+                <Select 
+                  label="Document Type *" 
+                  options={[...DOCUMENT_TYPES]} 
+                  value={invoiceData.documentType || DOCUMENT_TYPES[0]} 
+                  onChange={val => setInvoiceData({...invoiceData, documentType: val})} 
+                />
+              </div>
+            </div>
+          </div>
 
-          {selectedBuyer && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 flex flex-wrap gap-x-8 gap-y-4"
-            >
-              {[
-                { label: 'NTN', val: selectedBuyer.ntn || '-' },
-                { label: 'CNIC', val: selectedBuyer.cnic || '-' },
-                { label: 'STRN', val: selectedBuyer.strn || 'Unregistered' },
-                { label: 'Type', val: selectedBuyer.registrationType },
-                { label: 'Region', val: selectedBuyer.province },
-                { label: 'Address', val: selectedBuyer.fullAddress, full: true }
-              ].map((info, idx) => (
-                <div key={idx} className={info.full ? 'w-full pt-2 border-t border-slate-200 dark:border-slate-800' : ''}>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{info.label}</p>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{info.val}</p>
+          {/* Section 2: Buyer Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 flex items-center justify-center">
+                  <UserIcon size={18} />
+                </div>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Buyer Details</h3>
+              </div>
+              <Button variant="ghost" icon={<UserPlus size={16} />} className="text-xs h-8 px-3 rounded-lg" onClick={onAddNewBuyer}>
+                Quick Add Buyer
+              </Button>
+            </div>
+            
+            <Select 
+              placeholder="Select a registered buyer..."
+              options={buyers.map(b => b.buyerName)}
+              value={selectedBuyer?.buyerName || ''}
+              onChange={val => {
+                const b = buyers.find(x => x.buyerName === val);
+                setInvoiceData({...invoiceData, buyerId: b?._id || ''});
+              }}
+            />
+
+            {selectedBuyer && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 flex flex-wrap gap-x-8 gap-y-4"
+              >
+                {[
+                  { label: 'NTN', val: selectedBuyer.ntn || '-' },
+                  { label: 'CNIC', val: selectedBuyer.cnic || '-' },
+                  { label: 'STRN', val: selectedBuyer.strn || 'Unregistered' },
+                  { label: 'Type', val: selectedBuyer.registrationType },
+                  { label: 'Region', val: selectedBuyer.province },
+                  { label: 'Address', val: selectedBuyer.fullAddress, full: true }
+                ].map((info, idx) => (
+                  <div key={idx} className={info.full ? 'w-full pt-2 border-t border-slate-200 dark:border-slate-800' : ''}>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{info.label}</p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{info.val}</p>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </div>
+
+          {/* Section 3: Line Items */}
+          <div className="space-y-4 pb-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center">
+                  <ShoppingCart size={18} />
+                </div>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Invoice Items</h3>
+              </div>
+              <Button variant="secondary" icon={<Plus size={16} />} className="text-xs h-8 px-4 rounded-lg" onClick={addItem}>
+                Add Line Item
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              {(invoiceData.items || []).map((item, index) => (
+                <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative group">
+                  <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
+                    Item {index + 1}
+                  </div>
+                  <button 
+                    onClick={() => removeItem(item.id)}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-xl transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
+                    <div className="md:col-span-1">
+                      <Input label="HS Code *" placeholder="0101.1100" value={item.hsCode} onChange={e => updateItem(item.id, { hsCode: e.target.value })} />
+                    </div>
+                    <div className="md:col-span-3">
+                      <Input label="Product Description *" placeholder="Product or service details" value={item.description} onChange={e => updateItem(item.id, { description: e.target.value })} />
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <Select label="Sale Type *" options={SALE_TYPES} value={item.saleType} onChange={val => updateItem(item.id, { saleType: val })} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Input label="Quantity *" type="number" step="0.01" value={item.quantity} onChange={e => updateItem(item.id, { quantity: clamp(e.target.value) })} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
+                    <Select label="UOM *" options={UOM_OPTIONS} value={item.uom} onChange={val => updateItem(item.id, { uom: val })} />
+                    <Select 
+                      label="Rate *" 
+                      options={RATE_OPTIONS} 
+                      value={item.rate} 
+                      onChange={val => { updateItem(item.id, { rate: val }, true) }} 
+                    />
+                    <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: clamp(e.target.value) })} />
+
+                    <Input
+                      label="Sales Value (Excl. Tax)"
+                      specialLabel="Auto-Calc"
+                      onChange={e => updateItem(item.id, { salesValue: clamp(e.target.value) })}
+                      value={item.salesValue} 
+                    />
+                    <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: clamp(e.target.value) })} />
+                    <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: clamp(e.target.value) })} />
+                    
+                    <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: clamp(e.target.value) })} />
+                    <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: clamp(e.target.value) })} />
+                    <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: clamp(e.target.value) })} />
+                    
+                    <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: clamp(e.target.value) })} />
+                    <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: clamp(e.target.value) })} />
+                    <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: clamp(e.target.value) })} />
+                    
+                    <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: clamp(e.target.value) })} />
+                    <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: clamp(e.target.value) })} />
+                    <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: clamp(e.target.value) })} />
+                    
+                    <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
+                    <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />
+                    
+                    <Input 
+                      readOnly 
+                      label="Total Item Value" 
+                      className="bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-600 font-bold"
+                      value={item.totalItemValue.toFixed(2)} 
+                    />
+                  </div>
                 </div>
               ))}
-            </motion.div>
-          )}
+            </div>
+          </div>
         </div>
 
-        {/* Section 3: Line Items */}
-        <div className="space-y-4 pb-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center">
-                <ShoppingCart size={18} />
-              </div>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Invoice Items</h3>
-            </div>
-            <Button variant="secondary" icon={<Plus size={16} />} className="text-xs h-8 px-4 rounded-lg" onClick={addItem}>
-              Add Line Item
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="hidden sm:block">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Amount</p>
+            <h4 className="text-3xl font-black text-indigo-600 tracking-tighter">${totalInvoiceValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h4>
+          </div>
+          <div className="flex gap-4 w-full sm:w-auto">
+            <Button variant="secondary" className="flex-1 sm:flex-none px-10 h-14 rounded-2xl" onClick={onClose}>Discard</Button>
+            <Button 
+              className="flex-1 sm:flex-none px-10 h-14 rounded-2xl shadow-xl shadow-indigo-500/20" 
+              onClick={handleCreate}
+              disabled={!validInvoice}
+              icon={<Calculator size={20} />}
+            >
+              Generate & Preview
             </Button>
           </div>
-
-          <div className="space-y-6">
-            {(invoiceData.items || []).map((item, index) => (
-              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative group">
-                <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-                  Item {index + 1}
-                </div>
-                <button 
-                  onClick={() => removeItem(item.id)}
-                  className="absolute top-4 right-4 p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-xl transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
-                  <div className="md:col-span-1">
-                    <Input label="HS Code *" placeholder="0101.1100" value={item.hsCode} onChange={e => updateItem(item.id, { hsCode: e.target.value })} />
-                  </div>
-                  <div className="md:col-span-3">
-                    <Input label="Product Description *" placeholder="Product or service details" value={item.description} onChange={e => updateItem(item.id, { description: e.target.value })} />
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <Select label="Sale Type *" options={SALE_TYPES} value={item.saleType} onChange={val => updateItem(item.id, { saleType: val })} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Input label="Quantity *" type="number" step="0.01" value={item.quantity} onChange={e => updateItem(item.id, { quantity: clamp(e.target.value) })} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
-                  <Select label="UOM *" options={UOM_OPTIONS} value={item.uom} onChange={val => updateItem(item.id, { uom: val })} />
-                  <Select 
-                    label="Rate *" 
-                    options={RATE_OPTIONS} 
-                    value={item.rate} 
-                    onChange={val => { updateItem(item.id, { rate: val }, true) }} 
-                  />
-                  <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: clamp(e.target.value) })} />
-
-                  <Input
-                    label="Sales Value (Excl. Tax)"
-                    specialLabel="Auto-Calc"
-                    onChange={e => updateItem(item.id, { salesValue: clamp(e.target.value) })}
-                    value={item.salesValue} 
-                  />
-                  <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: clamp(e.target.value) })} />
-                  <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: clamp(e.target.value) })} />
-                  
-                  <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: clamp(e.target.value) })} />
-                  <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: clamp(e.target.value) })} />
-                  <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: clamp(e.target.value) })} />
-                  
-                  <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: clamp(e.target.value) })} />
-                  <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: clamp(e.target.value) })} />
-                  <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: clamp(e.target.value) })} />
-                  
-                  <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: clamp(e.target.value) })} />
-                  <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: clamp(e.target.value) })} />
-                  <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: clamp(e.target.value) })} />
-                  
-                  <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
-                  <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />
-                  
-                  <Input 
-                    readOnly 
-                    label="Total Item Value" 
-                    className="bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-600 font-bold"
-                    value={item.totalItemValue.toFixed(2)} 
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
-      </div>
-
-      <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <div className="hidden sm:block">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Amount</p>
-          <h4 className="text-3xl font-black text-indigo-600 tracking-tighter">${totalInvoiceValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h4>
+      </Modal>
+            
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/40 z-[100]">
+          <Loader label="Loading..." />
         </div>
-        <div className="flex gap-4 w-full sm:w-auto">
-          <Button variant="secondary" className="flex-1 sm:flex-none px-10 h-14 rounded-2xl" onClick={onClose}>Discard</Button>
-          <Button 
-            className="flex-1 sm:flex-none px-10 h-14 rounded-2xl shadow-xl shadow-indigo-500/20" 
-            onClick={handleCreate}
-            disabled={!invoiceData.buyerId || totalInvoiceValue === 0}
-            icon={<Calculator size={20} />}
-          >
-            Generate & Preview
-          </Button>
-        </div>
-      </div>
-    </Modal>
+      )}
+    </>
   );
 };

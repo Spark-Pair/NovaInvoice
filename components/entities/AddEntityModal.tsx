@@ -8,6 +8,7 @@ import { Entity } from '../../types';
 import { Upload, X, User as UserIcon, Lock } from 'lucide-react';
 import api from '@/axios';
 import Loader from '../Loader';
+import { useAppToast } from '../toast/toast';
 
 interface AddEntityModalProps {
   isOpen: boolean;
@@ -35,6 +36,8 @@ const PROVINCES = [
 ];
 
 export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose, onAdd }) => {
+  const toast = useAppToast();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -104,8 +107,11 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
           password: ''
         });
         setLogoPreview(null);
-      } catch (err: any) {
-        alert(err.response?.data?.message || err.message || 'Failed to create entity');
+        
+        toast.success("Entity registered successfully!")
+      } catch (error: any) {
+        console.error("Failed to create Entity", error)
+        toast.error(error.response?.data?.message || error.message || 'Failed to create entity')
       } finally {
         setIsLoading(false)
       }
