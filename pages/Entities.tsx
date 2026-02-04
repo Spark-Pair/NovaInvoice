@@ -32,10 +32,12 @@ import api from '@/axios';
 import Loader from '@/components/Loader';
 import { useAuth } from "@/hooks/useAuth";
 import { useAppToast } from "@/components/toast/toast";
+import { useGlobalLoader } from "@/hooks/LoaderContext";
 
 const Entities: React.FC = () => {
   const { setUsingEntity } = useAuth();
   const toast = useAppToast()
+  const { showLoader, hideLoader } = useGlobalLoader();
 
   const [entities, setEntities] = useState<Entity[]>([]);
   const [totalPages, setTotalPages] = useState<Number>(0);
@@ -154,6 +156,7 @@ const Entities: React.FC = () => {
       type: newStatus === 'Active' ? 'info' : 'danger',
 
       onConfirm: async () => {
+        showLoader();
         try {
           const { data } = await api.patch(
             `/entities/${entity.id}/toggle-status`
@@ -162,9 +165,13 @@ const Entities: React.FC = () => {
           setSelectedEntity(prev => prev ? { ...prev, status: newStatus } : null);
 
           handleApplyFilters();
-        } catch (err) {
-          console.error('Failed to toggle entity status', err);
+        
+          toast.success("Status updated successfully!")
+        } catch (error) {
+          console.error("Failed to update status!", error)
+          toast.error(error.response?.data?.message || error.message || 'Failed to update status!')
         } finally {
+          hideLoader();
           setIsConfirmationOpen(false);
         }
       },
@@ -180,12 +187,17 @@ const Entities: React.FC = () => {
       type: 'danger',
 
       onConfirm: async () => {
+        showLoader();
         try {
           await api.patch(`/entities/${entityId}/reset-password`, { password });
-        } catch (err) {
-          console.error('Failed to reset password', err);
+        
+          toast.success("Password resetted successfully!")
+        } catch (error) {
+          console.error("Failed to reset password!", error)
+          toast.error(error.response?.data?.message || error.message || 'Failed to reset password!')
         } finally {
           setIsConfirmationOpen(false)
+          hideLoader();
         }
       },
     });
@@ -214,9 +226,8 @@ const Entities: React.FC = () => {
   }, []);
 
   const exportData = async () => {
+    showLoader();
     try {
-      setIsLoading(true);
-
       const filterParams = buildFilterParams();
 
       const { data } = await api.get("/entities", {
@@ -259,10 +270,13 @@ const Entities: React.FC = () => {
         workbook,
         `Entities_${new Date().toISOString().slice(0, 10)}.xlsx`
       );
-    } catch (err) {
-      console.error(err);
+
+      toast.success("Data exported succcessfully!")
+    } catch (error) {
+      console.error("Failed to export data!", error)
+      toast.error(error.response?.data?.message || error.message || 'Failed to export data!')
     } finally {
-      setIsLoading(false);
+      hideLoader();
     }
   };
 
@@ -462,7 +476,7 @@ const Entities: React.FC = () => {
                             <button onClick={() => {setSelectedEntity(entity); setIsResetPasswordModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                               <KeyRound size={14} /> Reset Password
                             </button>
-                            <button onClick={() => {setUsingEntity(entity); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                            <button onClick={() => {toast.success(`Using ${entity.username} as client`); setUsingEntity(entity); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                               <MousePointer size={14} /> Select this entity
                             </button>
                             <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-1 mx-2" />

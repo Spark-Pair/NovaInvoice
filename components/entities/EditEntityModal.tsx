@@ -8,6 +8,8 @@ import { Entity } from '../../types';
 import { Upload, X, ShieldAlert } from 'lucide-react';
 import api from '@/axios';
 import Loader from '../Loader';
+import { useAppToast } from '../toast/toast';
+import { useGlobalLoader } from '@/hooks/LoaderContext';
 
 interface EditEntityModalProps {
   isOpen: boolean;
@@ -36,11 +38,13 @@ const PROVINCES = [
 ];
 
 export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClose, onUpdate, entity }) => {
+  const toast = useAppToast();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Entity>>({});
-    
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { showLoader, hideLoader } = useGlobalLoader();
 
   useEffect(() => {
     if (entity) {
@@ -69,7 +73,7 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClos
       formData.fullAddress &&
       (formData.ntn || formData.cnic)
     ) {
-      setIsLoading(true);
+      showLoader();
       try {
         const payload = {
           image: logoPreview || '',
@@ -97,14 +101,13 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClos
           status: data.entity.status || 'Active',
           username: data.entity.user?.username,
         });
-      } catch (err: any) {
-        alert(
-          err.response?.data?.message ||
-          err.message ||
-          'Failed to update entity'
-        );
+        
+        toast.success("Entity updated successfully!")
+      } catch (error: any) {
+        console.error("Failed to update Entity!", error)
+        toast.error(error.response?.data?.message || error.message || 'Failed to update entity!')
       } finally {
-        setIsLoading(false)
+        hideLoader()
         onClose();
       }
     }
@@ -234,12 +237,6 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClos
           </div>
         </div>
       </Modal>
-            
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/40 z-[100]">
-          <Loader label="Loading..." />
-        </div>
-      )}
     </>
   );
 };

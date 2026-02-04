@@ -33,8 +33,13 @@ import { Invoice, Buyer, Entity } from '../types';
 import api from '@/axios';
 import Loader from '@/components/Loader';
 import { EditInvoiceModal } from "@/components/invoices/EditInvoiceModal";
+import { useAppToast } from "@/components/toast/toast";
+import { useGlobalLoader } from "@/hooks/LoaderContext";
 
 const Invoices: React.FC = () => {
+  const toast = useAppToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
+
   const [invoices, setInvoices] = useState([]);
   const [totalPages, setTotalPages] = useState<Number>(0);
   const [totalRecords, setTotalRecords] = useState<Number>(0);
@@ -171,15 +176,20 @@ const Invoices: React.FC = () => {
       type: 'danger',
 
       onConfirm: async () => {
+        showLoader();
         try {
           const { data } = await api.delete(
             `/invoices/${invoice.id}/`
           );
 
           handleApplyFilters();
-        } catch (err) {
-          console.error('Failed to toggle entity status', err);
+        
+          toast.success("Status updated successfully!")
+        } catch (error) {
+          console.error("Failed to update status!", error)
+          toast.error(error.response?.data?.message || error.message || 'Failed to update status!')
         } finally {
+          hideLoader();
           setIsConfirmationOpen(false);
         }
       },
@@ -214,9 +224,8 @@ const Invoices: React.FC = () => {
   };
 
   const exportData = async () => {
+    showLoader();
     try {
-      setIsLoading(true);
-
       const filterParams = buildFilterParams();
 
       const { data } = await api.get("/invoices", {
@@ -290,10 +299,13 @@ const Invoices: React.FC = () => {
         workbook,
         `Invoices_${new Date().toISOString().slice(0, 10)}.xlsx`
       );
-    } catch (err) {
-      console.error(err);
+
+      toast.success("Data exported succcessfully!")
+    } catch (error) {
+      console.error("Failed to export data!", error)
+      toast.error(error.response?.data?.message || error.message || 'Failed to export data!')
     } finally {
-      setIsLoading(false);
+      hideLoader();
     }
   };
 

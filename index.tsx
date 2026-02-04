@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './hooks/AuthContext';
 import { ToastProvider } from './components/toast/ToastContext';
+import { LoaderProvider } from './hooks/LoaderContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -15,7 +16,9 @@ root.render(
   <React.StrictMode>
     <AuthProvider>
       <ToastProvider>
-        <App />
+        <LoaderProvider>
+          <App />
+        </LoaderProvider>
       </ToastProvider>
     </AuthProvider>
   </React.StrictMode>

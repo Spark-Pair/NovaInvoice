@@ -63,7 +63,7 @@ export default function App() {
 
                           <Route path="/settings" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Settings /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="*" element={ <Navigate to={ isAuthorized({ roles: 'admin' }) ? "/admin-dashboard" : isAuthorized(['client']) ? "/dashboard" : "" } /> } />
+                          <Route path="*" element={ <Navigate to={ isAuthorized({ roles: 'admin' }) ? "/admin-dashboard" : isAuthorized({ roles: 'client' }) ? "/dashboard" : "" } /> } />
                         </Routes>
                       </div>
                     </main>

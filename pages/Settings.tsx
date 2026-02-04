@@ -12,6 +12,8 @@ import { ConfigModal } from '@/components/settings/ConfigModal';
 import api from '@/axios';
 import Loader from '@/components/Loader';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppToast } from '@/components/toast/toast';
+import { useGlobalLoader } from '@/hooks/LoaderContext';
 
 const CURRENCY_OPTIONS = ['Dollar ($)', 'Rs (₨)'];
 
@@ -106,6 +108,8 @@ export const SETTINGS_CONFIG = {
 
 const Settings: React.FC = () => {
   const { updateSettings } = useAuth();
+  const toast = useAppToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
 
   const [currency, setCurrency] = useState(() => localStorage.getItem('app_currency') || 'Dollar ($)');
   const [showSuccess, setShowSuccess] = useState(false);
@@ -136,14 +140,19 @@ const Settings: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
-    // localStorage.setItem('app_currency', currency);
-    // setShowSuccess(true);
-    // setTimeout(() => setShowSuccess(false), 3000);
-    console.log("handling save");
-    
-    const { data } = await api.patch('/users/settings', { settings: { configs } });
+    showLoader();
+    try {
+      const { data } = await api.patch('/users/settings', { settings: { configs } });
 
-    updateSettings({ configs });
+      updateSettings({ configs });
+
+      toast.success("Saved settings succcessfully!");
+    } catch (error) {
+      console.error("Failed to save Settings", error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to export data!');
+    } finally {
+      hideLoader();
+    }
   };
 
   const openConfigModal = (configType) => {

@@ -9,6 +9,8 @@ import { Plus, Trash2, UserPlus, Calculator, ShoppingCart, FileText, User as Use
 import { motion } from 'framer-motion';
 import api from '@/axios';
 import Loader from '../Loader';
+import { useGlobalLoader } from '@/hooks/LoaderContext';
+import { useAppToast } from '../toast/toast';
 
 // Fix: Use 'as const' to ensure these values are treated as specific literals rather than just strings
 const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Credit Note', 'Debit Note'] as const;
@@ -1085,6 +1087,9 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   buyers,
   onAddNewBuyer
 }) => {
+  const toast = useAppToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
+
   const [selectedBuyer, setSelectedBuyer] = useState(null);
   const [invoiceData, setInvoiceData] = useState({
     invoiceNumber: '',
@@ -1095,8 +1100,6 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     buyerId: '',
     items: [createInitialItem()],
   });
-  
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!invoiceData.buyerId) return;
@@ -1105,7 +1108,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   }, [invoiceData.buyerId]);
 
   const fetchBuyerDetails = async () => {
-    setIsLoading(true);
+    showLoader();
 
     try {
       const { data } = await api.get(`/invoices/buyers/${invoiceData.buyerId}`);
@@ -1113,7 +1116,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     } catch (err) {
       console.error("Failed to fetch buyer details:", err);
     } finally {
-      setIsLoading(false);
+      hideLoader();
     }
   };
 
@@ -1220,7 +1223,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   const handleCreate = async () => {
     if (!invoiceData.buyerId || !invoiceData.items?.length) return;
 
-    setIsLoading(true);
+    showLoader();
     try {
       const payload = {
         ...invoiceData,
@@ -1239,10 +1242,13 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
       const { data } = await api.post('/invoices', payload);
       onAdd(data.invoice);
+        
+      toast.success("Invoice created successfully!")
     } catch (error) {
-      console.error("Failed to create Invoice", error)
+      console.error("Failed to create Invoice!", error)
+      toast.error(error.response?.data?.message || error.message || 'Failed to create Invoice!')
     } finally {
-      setIsLoading(false);
+      hideLoader();
     }
   };
 
@@ -1467,12 +1473,6 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
           </div>
         </div>
       </Modal>
-            
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/40 z-[100]">
-          <Loader label="Loading..." />
-        </div>
-      )}
     </>
   );
 };

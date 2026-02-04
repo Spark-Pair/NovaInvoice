@@ -8,6 +8,8 @@ import { InvoiceItem, Buyer } from '../../types';
 import { Plus, Trash2, UserPlus, Calculator, ShoppingCart, FileText, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '@/axios';
+import { useAppToast } from '../toast/toast';
+import { useGlobalLoader } from '@/hooks/LoaderContext';
 
 // Fix: Use 'as const' to ensure these values are treated as specific literals rather than just strings
 const DOCUMENT_TYPES = ['Sale Invoice', 'Purchase Invoice', 'Credit Note', 'Debit Note'] as const;
@@ -1050,6 +1052,9 @@ export const EditInvoiceModal = ({
   buyers,
   onAddNewBuyer
 }) => {
+  const toast = useAppToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
+
   // const [buyers, setBuyers] = useState([]);
   const [selectedBuyer, setSelectedBuyer] = useState(null);
   const [invoiceData, setInvoiceData] = useState(null);
@@ -1171,9 +1176,19 @@ export const EditInvoiceModal = ({
   const handleUpdate = async () => {
     if ((!invoiceData?.buyerId && !invoice.buyer) || !invoiceData?.items?.length) return;
 
-    const { data } = await api.patch(`/invoices/${invoiceData.id}`, invoiceData);
-    
-    onUpdate(data.invoice);
+    showLoader();
+    try {
+      const { data } = await api.patch(`/invoices/${invoiceData.id}`, invoiceData); 
+
+      onUpdate(data.invoice);
+        
+      toast.success("Invoice updated successfully!")
+    } catch (error) {
+      console.error("Failed to update Invoice!", error)
+      toast.error(error.response?.data?.message || error.message || 'Failed to update Invoice!')
+    } finally {
+      hideLoader();
+    }
   };
 
   return (

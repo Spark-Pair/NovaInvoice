@@ -145,7 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
                         className="absolute bottom-[calc(100%+8px)] left-0 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-2 z-50 overflow-hidden"
                       >
                         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 mb-1">
-                          <p className="text-sm font-bold truncate">{user.name}</p>
+                          <p className="text-sm font-bold truncate capitalize">{user.name}</p>
                           <p className="text-xs text-slate-500 truncate">{user.email}</p>
                         </div>
                         <button 
@@ -154,12 +154,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
                         >
                           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                           <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-                        </button>
-                        <button 
-                          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
-                        >
-                          <UserIcon size={18} />
-                          <span>Account Profile</span>
                         </button>
                         <button 
                           onClick={onLogout}
@@ -210,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
                         className="absolute bottom-[calc(100%+8px)] left-0 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-2 z-50 overflow-hidden"
                       >
                         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 mb-1">
-                          <p className="text-sm font-bold truncate">{usingEntity.businessName}</p>
+                          <p className="text-sm font-bold truncate capitalize">{usingEntity.businessName}</p>
                         </div>
                         <button 
                           onClick={toggleTheme}
@@ -218,12 +212,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
                         >
                           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                           <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-                        </button>
-                        <button 
-                          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
-                        >
-                          <UserIcon size={18} />
-                          <span>Account Profile</span>
                         </button>
                         <button 
                           onClick={() => {

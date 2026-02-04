@@ -6,6 +6,8 @@ import { Button } from '../Button';
 import { Select } from '../Select';
 import { Buyer } from '../../types';
 import api from '@/axios';
+import { useAppToast } from '../toast/toast';
+import { useGlobalLoader } from '@/hooks/LoaderContext';
 
 interface EditBuyerModalProps {
   isOpen: boolean;
@@ -34,6 +36,9 @@ const PROVINCES = [
 ];
 
 export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose, onUpdate, buyer }) => {
+  const toast = useAppToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
+
   const [formData, setFormData] = useState<Partial<Buyer>>({});
 
   useEffect(() => {
@@ -56,11 +61,11 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
       buyer &&
       formData.buyerName &&
       formData.registrationType &&
-      formData.ntn &&
-      formData.cnic &&
       formData.province &&
-      formData.fullAddress
+      formData.fullAddress &&
+      (formData.ntn || formData.cnic)
     ) {
+      showLoader();
       try {
         const payload = {
           buyerName: formData.buyerName,
@@ -90,12 +95,13 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
         });
 
         onClose();
-      } catch (err: any) {
-        alert(
-          err.response?.data?.message ||
-          err.message ||
-          'Failed to update buyer'
-        );
+        
+        toast.success("Entity updated successfully!")
+      } catch (error: any) {
+        console.error("Failed to update buyer!", error)
+        toast.error(error.response?.data?.message || error.message || 'Failed to update buyer!')
+      } finally {
+        hideLoader()
       }
     }
   };
@@ -133,14 +139,14 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
             />
 
             <Input 
-              label="NTN *" 
+              label="NTN" 
               placeholder="0000000-0" 
               value={formData.ntn || ''}
               onChange={e => setFormData({...formData, ntn: e.target.value})}
             />
             
             <Input 
-              label="CNIC *" 
+              label="CNIC" 
               placeholder="00000-0000000-0" 
               value={formData.cnic || ''}
               onChange={e => setFormData({...formData, cnic: e.target.value})}
@@ -175,7 +181,7 @@ export const EditBuyerModal: React.FC<EditBuyerModalProps> = ({ isOpen, onClose,
           <Button 
             className="flex-1 rounded-2xl shadow-lg shadow-indigo-500/20" 
             onClick={handleUpdate}
-            disabled={!formData.buyerName || !formData.ntn || !formData.cnic || !formData.fullAddress}
+            disabled={!formData.buyerName || (!formData.ntn && !formData.cnic) || !formData.fullAddress}
           >
             Update Buyer
           </Button>

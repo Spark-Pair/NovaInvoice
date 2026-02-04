@@ -26,8 +26,13 @@ import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Buyer } from '../types';
 import api from '@/axios';
 import Loader from '@/components/Loader';
+import { useGlobalLoader } from "@/hooks/LoaderContext";
+import { useAppToast } from "@/components/toast/toast";
 
 const Buyers: React.FC = () => {
+  const toast = useAppToast()
+  const { showLoader, hideLoader } = useGlobalLoader();
+
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -122,6 +127,7 @@ const Buyers: React.FC = () => {
       type: newStatus === 'Active' ? 'info' : 'danger',
 
       onConfirm: async () => {
+        showLoader();
         try {
           const { data } = await api.patch(
             `/buyers/${buyer.id}/toggle-status`
@@ -130,9 +136,13 @@ const Buyers: React.FC = () => {
           setSelectedBuyer(prev => prev ? { ...prev, status: newStatus } : null);
 
           handleApplyFilters();
-        } catch (err) {
-          console.error('Failed to toggle buyer status', err);
+        
+          toast.success("Status updated successfully!")
+        } catch (error) {
+          console.error("Failed to toggle buyer status!", error)
+          toast.error(error.response?.data?.message || error.message || 'Failed to toggle buyer status!')
         } finally {
+          hideLoader();
           setIsConfirmationOpen(false);
         }
       },
@@ -161,9 +171,8 @@ const Buyers: React.FC = () => {
   }, []);
 
   const exportData = async () => {
+    showLoader();
     try {
-      setIsLoading(true);
-
       const params: any = {
         noLimit: true,
         ...appliedFilters,
@@ -199,10 +208,13 @@ const Buyers: React.FC = () => {
         workbook,
         `Buyers_${new Date().toISOString().slice(0, 10)}.xlsx`
       );
-    } catch (e) {
-      console.error(e);
+
+      toast.success("Data exported succcessfully!")
+    } catch (error) {
+      console.error("Failed to export data!", error)
+      toast.error(error.response?.data?.message || error.message || 'Failed to export data!')
     } finally {
-      setIsLoading(false);
+      hideLoader();
     }
   };
 

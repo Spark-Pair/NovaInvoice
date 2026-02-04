@@ -9,6 +9,7 @@ import { Upload, X, User as UserIcon, Lock } from 'lucide-react';
 import api from '@/axios';
 import Loader from '../Loader';
 import { useAppToast } from '../toast/toast';
+import { useGlobalLoader } from '@/hooks/LoaderContext';
 
 interface AddEntityModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ const PROVINCES = [
 
 export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose, onAdd }) => {
   const toast = useAppToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -51,8 +53,6 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
     username: '',
     password: ''
   });
-  
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,7 +75,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
       formData.password &&
       (formData.ntn || formData.cnic)
     ) {
-      setIsLoading(true);
+      showLoader();
       try {
         const payload = {
           image: logoPreview || '',
@@ -110,10 +110,10 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
         
         toast.success("Entity registered successfully!")
       } catch (error: any) {
-        console.error("Failed to create Entity", error)
-        toast.error(error.response?.data?.message || error.message || 'Failed to create entity')
+        console.error("Failed to create Entity!", error)
+        toast.error(error.response?.data?.message || error.message || 'Failed to create entity!')
       } finally {
-        setIsLoading(false)
+        hideLoader();
       }
     }
   };
@@ -256,12 +256,6 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
           </div>
         </div>
       </Modal>
-            
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/40 z-[100]">
-          <Loader label="Loading..." />
-        </div>
-      )}
     </>
   );
 };

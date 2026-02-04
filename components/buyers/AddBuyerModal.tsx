@@ -7,6 +7,8 @@ import { Select } from '../Select';
 import { Buyer } from '../../types';
 import api from '@/axios';
 import Loader from '../Loader';
+import { useGlobalLoader } from '@/hooks/LoaderContext';
+import { useAppToast } from '../toast/toast';
 
 interface AddBuyerModalProps {
   isOpen: boolean;
@@ -34,6 +36,9 @@ const PROVINCES = [
 ];
 
 export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, onAdd }) => {
+  const toast = useAppToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
+
   const [formData, setFormData] = useState({
     buyerName: '',
     registrationType: REGISTRATION_TYPES[0],
@@ -44,8 +49,6 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
     fullAddress: '',
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleAdd = async () => {
     if (
       formData.buyerName && 
@@ -54,7 +57,7 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
       formData.fullAddress &&
       (formData.ntn || formData.cnic)
     ) {
-      setIsLoading(true);
+      showLoader();
       try {
         const payload = {
           buyerName: formData.buyerName,
@@ -80,10 +83,13 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
           province: PROVINCES[0],
           fullAddress: '',
         });
-      } catch (err: any) {
-        alert(err.response?.data?.message || err.message || 'Failed to add buyer');
+        
+        toast.success("Entity registered successfully!")
+      } catch (error: any) {
+        console.error("Failed to add buyer!", error)
+        toast.error(error.response?.data?.message || error.message || 'Failed to add buyer!')
       } finally {
-        setIsLoading(false)
+        hideLoader()
       }
     }
   };
@@ -169,12 +175,6 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
           </div>
         </div>
       </Modal>
-      
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/40 z-[100]">
-          <Loader label="Loading..." />
-        </div>
-      )}
     </>
   );
 };
