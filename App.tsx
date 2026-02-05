@@ -15,6 +15,7 @@ import Buyers from './pages/Buyers';
 import Invoices from './pages/Invoices';
 import Settings from './pages/Settings';
 import NotAuthorized from './pages/NotAuthorized';
+import Reports from './pages/Reports';
 
 export default function App() {
   const { user, login, logout, isAuthorized, setUsingEntity } = useAuth();
@@ -60,6 +61,7 @@ export default function App() {
 
                           <Route path="/buyers" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Buyers /> : <Navigate to="/not-authorized" /> } />
                           <Route path="/invoices" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Invoices /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/reports" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Reports /> : <Navigate to="/not-authorized" /> } />
 
                           <Route path="/settings" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Settings /> : <Navigate to="/not-authorized" /> } />
 

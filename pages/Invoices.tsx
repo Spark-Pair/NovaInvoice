@@ -25,7 +25,7 @@ import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { CreateInvoiceModal } from '../components/invoices/CreateInvoiceModal';
 import { BulkUploadModal } from '../components/invoices/BulkUploadModal';
-import { InvoicePreview } from './InvoicePreview';
+import { InvoicePreview, InvoiceReportDocument } from './InvoicePreview';
 import { InvoiceFilterModal } from '../components/invoices/InvoiceFilterModal';
 import { AddBuyerModal } from '../components/buyers/AddBuyerModal';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -35,6 +35,7 @@ import Loader from '@/components/Loader';
 import { EditInvoiceModal } from "@/components/invoices/EditInvoiceModal";
 import { useAppToast } from "@/components/toast/toast";
 import { useGlobalLoader } from "@/hooks/LoaderContext";
+import { pdf } from "@react-pdf/renderer";
 
 const Invoices: React.FC = () => {
   const toast = useAppToast();
@@ -309,6 +310,52 @@ const Invoices: React.FC = () => {
     }
   };
 
+  const exportPDFReport = async () => {
+    showLoader();
+    try {
+      const filterParams = buildFilterParams();
+      
+      // 1. Fetch filtered data (noLimit: true ensures we get everything, not just page 1)
+      const { data } = await api.get("/invoices", {
+        params: {
+          noLimit: true,
+          ...filterParams,
+        },
+      });
+
+      const formattedInvoices = data.invoices.map((inv: any) => ({
+        id: inv._id,
+        invoiceNumber: inv.invoiceNumber,
+        date: new Date(inv.date).toISOString().split("T")[0],
+        buyer: inv.buyer,
+        isSent: inv.isSent,
+        totalValue: inv.totalValue
+      }));
+
+      // 2. Generate the PDF blob
+      const blob = await pdf(
+        <InvoiceReportDocument 
+          invoices={formattedInvoices} 
+          currencySymbol={currencySymbol} 
+        />
+      ).toBlob();
+
+      // 3. Trigger Download
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Invoice_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      
+      toast.success("PDF Report generated!");
+    } catch (error) {
+      console.error("PDF Export Failed", error);
+      toast.error("Failed to generate PDF report");
+    } finally {
+      hideLoader();
+    }
+  };
+
   return (
     <>
       <div className="space-y-8 max-w-7xl mx-auto flex flex-col h-full">
@@ -407,7 +454,26 @@ const Invoices: React.FC = () => {
                 >
                   Filters {Object.keys(appliedFilters).length > 0 && `(${Object.keys(appliedFilters).length})`}
                 </Button>
-                <Button onClick={exportData} variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button>
+                {/* <Button onClick={exportData} variant="secondary" icon={<Download size={16} />} className="rounded-xl h-11">Export</Button> */}
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={exportData} // Your existing Excel export
+                    variant="secondary" 
+                    icon={<Download size={16} />} 
+                    className="rounded-xl h-11"
+                  >
+                    Excel
+                  </Button>
+                  
+                  <Button 
+                    onClick={exportPDFReport} 
+                    variant="secondary" 
+                    icon={<FileText size={16} />} 
+                    className="rounded-xl h-11"
+                  >
+                    PDF Report
+                  </Button>
+                </div>  
               </div>
             </div>
 
@@ -430,6 +496,7 @@ const Invoices: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                  {console.log(invoices)}
                   {invoices.map(inv => {
                     const b = buyers.find(x => x.id === inv.buyerId);
                     return (

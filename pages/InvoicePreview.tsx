@@ -32,6 +32,13 @@ const pdfStyles = StyleSheet.create({
   grandTotal: { fontWeight: 'bold' },
 });
 
+const hasAnyMeaningfulValue = (items = [], key: string) => {
+  return items.some(item => {
+    const value = item[key];
+    return value !== 0 && value !== '' && value !== null && value !== undefined;
+  });
+};
+
 const isFieldVisible = (
   configSection = [],
   key: string
@@ -69,6 +76,28 @@ const InvoiceDocument = ({invoice, previewConfigs}) => {
     { label: 'Reference No', value: invoice.referenceNumber || '-', show: isFieldVisible(previewConfigs?.meta, 'reference_no'), },
     { label: 'Salesman', value: invoice.salesman || '-', show: isFieldVisible(previewConfigs?.meta, 'salesman'), },
   ];
+
+  // const tableColumns = [
+  //   { label: 'UOM', key: 'uom', show: isFieldVisible(previewConfigs?.items, 'uom') && hasAnyMeaningfulValue(invoice.items, 'uom'), },
+  //   { label: 'HS Code', key: 'hsCode', show: isFieldVisible(previewConfigs?.items, 'hs_code') && hasAnyMeaningfulValue(invoice.items, 'hsCode'), },
+  //   { label: 'Description', key: 'description', show: isFieldVisible(previewConfigs?.items, 'description') && hasAnyMeaningfulValue(invoice.items, 'description'), },
+  //   { label: 'Sale Type', key: 'saleType', show: isFieldVisible(previewConfigs?.items, 'sale_type') && hasAnyMeaningfulValue(invoice.items, 'saleType'), },
+  //   { label: 'Qty', key: 'quantity', show: isFieldVisible(previewConfigs?.items, 'quantity') && hasAnyMeaningfulValue(invoice.items, 'quantity'), },
+  //   { label: 'Rate', key: 'rate', show: isFieldVisible(previewConfigs?.items, 'rate') && hasAnyMeaningfulValue(invoice.items, 'rate'), },
+  //   { label: 'Unit Price', key: 'unitPrice', show: isFieldVisible(previewConfigs?.items, 'unit_price') && hasAnyMeaningfulValue(invoice.items, 'unitPrice'), },
+  //   { label: 'Sales Value Exc Tax', key: 'salesValue', show: isFieldVisible(previewConfigs?.items, 'sales_value_exc_tax') && hasAnyMeaningfulValue(invoice.items, 'salesValueExcTax'), },
+  //   { label: 'Discount', key: 'discount', show: isFieldVisible(previewConfigs?.items, 'discount') && hasAnyMeaningfulValue(invoice.items, 'discount'), },
+  //   { label: 'Other Discount', key: 'otherDiscount', show: isFieldVisible(previewConfigs?.items, 'other_discount') && hasAnyMeaningfulValue(invoice.items, 'otherDiscount'), },
+  //   { label: 'Trade Discount', key: 'tradeDiscount', show: isFieldVisible(previewConfigs?.items, 'trade_discount') && hasAnyMeaningfulValue(invoice.items, 'tradeDiscount'), },
+  //   { label: 'Sales Tax', key: 'salesTax', show: isFieldVisible(previewConfigs?.items, 'sales_tax') && hasAnyMeaningfulValue(invoice.items, 'salesTax'), },
+  //   { label: 'Tax Withheld', key: 'salesTaxWithheld', show: isFieldVisible(previewConfigs?.items, 'tax_withheld') && hasAnyMeaningfulValue(invoice.items, 'taxWithheld'), },
+  //   { label: 'Extra Tax', key: 'extraTax', show: isFieldVisible(previewConfigs?.items, 'extra_tax') && hasAnyMeaningfulValue(invoice.items, 'extraTax'), },
+  //   { label: 'Further Tax', key: 'furtherTax', show: isFieldVisible(previewConfigs?.items, 'further_tax') && hasAnyMeaningfulValue(invoice.items, 'furtherTax'), },
+  //   { label: 'FED', key: 'federalExciseDuty', show: isFieldVisible(previewConfigs?.items, 'fed') && hasAnyMeaningfulValue(invoice.items, 'fed'), },
+  //   { label: 'SRO Schedule', key: 'sroScheduleNo', show: isFieldVisible(previewConfigs?.items, 'sro_schedule') && hasAnyMeaningfulValue(invoice.items, 'sroSchedule'), },
+  //   { label: 'SRO Serial', key: 'sroItemSerialNo', show: isFieldVisible(previewConfigs?.items, 'sro_serial') && hasAnyMeaningfulValue(invoice.items, 'sroSerial'), },
+  //   { label: 'Total', key: 'totalItemValue', show: isFieldVisible(previewConfigs?.items, 'total'), },
+  // ]
 
   const tableColumns = [
     { label: 'UOM', key: 'uom', show: isFieldVisible(previewConfigs?.items, 'uom'), },
@@ -288,5 +317,91 @@ export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, onC
         );
       }}
     </BlobProvider>
+  );
+};
+
+const reportStyles = StyleSheet.create({
+  page: { padding: 20, fontSize: 9, fontFamily: 'Helvetica', color: '#334155' },
+  headerContainer: { marginBottom: 20, borderBottom: '2 solid #6366f1', paddingBottom: 10 },
+  reportTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
+  
+  table: { display: 'flex', width: 'auto', marginTop: 4 },
+  // 'fixed' prop on this View in the component below is what repeats it
+  tableHeader: { 
+    flexDirection: 'row', 
+    backgroundColor: '#f8fafc', 
+    borderBottom: '1 solid #cbd5e1',
+    fontWeight: 'bold',
+    paddingVertical: 8,
+  },
+  tableRow: { 
+    flexDirection: 'row', 
+    borderBottom: '0.5 solid #e2e8f0',
+    paddingVertical: 8,
+    alignItems: 'center',
+    minHeight: 30
+  },
+  
+  column: { paddingHorizontal: 4 },
+  colDate: { width: '12%' },
+  colInv: { width: '18%' },
+  colBuyer: { width: '35%' },
+  colStatus: { width: '15%', textAlign: 'center' },
+  colAmount: { width: '20%', textAlign: 'right' },
+
+  footer: { marginTop: 20, flexDirection: 'row', justifyContent: 'flex-end' },
+  grandTotal: { fontSize: 12, fontWeight: 'bold', color: '#6366f1' }
+});
+
+export const InvoiceReportDocument = ({ invoices, currencySymbol }) => {
+  const totalAmount = invoices.reduce((acc, inv) => acc + inv.totalValue, 0);
+
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={reportStyles.page}>
+        {/* Report Header */}
+        <View style={reportStyles.headerContainer}>
+          <Text style={reportStyles.reportTitle}>Invoice Summary Report</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+            <Text style={{ fontSize: 8, color: '#64748b' }}>Generated on: {new Date().toLocaleString()}</Text>
+            <Text style={{ fontSize: 8, color: '#64748b' }}>Total Records: {invoices.length}</Text>
+          </View>
+        </View>
+
+        {/* Table */}
+        <View style={reportStyles.table}>
+          {/* Header Row - added 'fixed' prop */}
+          <View style={reportStyles.tableHeader} fixed>
+            <Text style={[reportStyles.colDate, reportStyles.column]}>Date</Text>
+            <Text style={[reportStyles.colInv, reportStyles.column]}>Invoice #</Text>
+            <Text style={[reportStyles.colBuyer, reportStyles.column]}>Buyer</Text>
+            <Text style={[reportStyles.colStatus, reportStyles.column]}>Status</Text>
+            <Text style={[reportStyles.colAmount, reportStyles.column]}>Amount ({currencySymbol})</Text>
+          </View>
+
+          {/* Data Rows */}
+          {invoices.map((inv, index) => (
+            <View key={inv.id} style={[reportStyles.tableRow, { backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#fdfdfd' }]} wrap={false}>
+              <Text style={[reportStyles.colDate, reportStyles.column]}>{inv.date}</Text>
+              <Text style={[reportStyles.colInv, reportStyles.column, { fontWeight: 'bold' }]}>{inv.invoiceNumber}</Text>
+              <Text style={[reportStyles.colBuyer, reportStyles.column]}>{inv.buyer.buyerName}</Text>
+              <Text style={[reportStyles.colStatus, reportStyles.column, { color: inv.isSent ? '#059669' : '#d97706' }]}>
+                {inv.isSent ? 'Sent' : 'Pending'}
+              </Text>
+              <Text style={[reportStyles.colAmount, reportStyles.column]}>
+                {inv.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Footer */}
+        <View style={reportStyles.footer}>
+          <Text style={reportStyles.grandTotal}>
+            Grand Total: {currencySymbol} {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </Text>
+        </View>
+      </Page>
+    </Document>
   );
 };
