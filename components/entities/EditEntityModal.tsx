@@ -10,6 +10,7 @@ import api from '@/axios';
 import Loader from '../Loader';
 import { useAppToast } from '../toast/toast';
 import { useGlobalLoader } from '@/hooks/LoaderContext';
+import { capitalize } from '@/hooks/helpers';
 
 interface EditEntityModalProps {
   isOpen: boolean;
@@ -164,10 +165,9 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({ isOpen, onClos
               <div className="md:col-span-2">
                 <Input 
                   label="Business Name *"
-                  className="capitalize"
                   placeholder="Enter legally registered name" 
                   value={formData.businessName}
-                  onChange={e => setFormData({...formData, businessName: e.target.value})}
+                  onChange={e => setFormData({...formData, businessName: capitalize(e.target.value)})}
                 />
               </div>
 

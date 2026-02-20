@@ -9,6 +9,7 @@ import api from '@/axios';
 import Loader from '../Loader';
 import { useGlobalLoader } from '@/hooks/LoaderContext';
 import { useAppToast } from '../toast/toast';
+import { capitalize } from '@/hooks/helpers';
 
 interface AddBuyerModalProps {
   isOpen: boolean;
@@ -105,7 +106,7 @@ export const AddBuyerModal: React.FC<AddBuyerModalProps> = ({ isOpen, onClose, o
                   label="Buyer Name *" 
                   placeholder="Enter buyer's legal name" 
                   value={formData.buyerName}
-                  onChange={e => setFormData({...formData, buyerName: e.target.value})}
+                  onChange={e => setFormData({...formData, buyerName: capitalize(e.target.value)})}
                 />
               </div>
 

@@ -46,7 +46,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
 
     { icon: <Users size={20} />, label: 'Buyers', path: '/buyers', show: isAuthorized({ roles: 'client' }) },
     { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices', show: isAuthorized({ roles: 'client' }) },
-    { icon: <FileText size={20} />, label: 'Reports', path: '/reports', show: isAuthorized({ roles: 'client' }) },
 
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings', show: isAuthorized({ roles: 'client' }) },
   ];
@@ -56,7 +55,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
 
     { icon: <Users size={20} />, label: 'Buyers', path: '/buyers', show: true },
     { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices', show: true },
-    { icon: <FileText size={20} />, label: 'Reports', path: '/reports', show: true },
 
     { icon: <Settings size={20} />, label: 'Client Settings', path: '/settings', show: true },
   ];

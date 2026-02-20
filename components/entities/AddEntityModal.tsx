@@ -10,6 +10,7 @@ import api from '@/axios';
 import Loader from '../Loader';
 import { useAppToast } from '../toast/toast';
 import { useGlobalLoader } from '@/hooks/LoaderContext';
+import { capitalize } from '@/hooks/helpers';
 
 interface AddEntityModalProps {
   isOpen: boolean;
@@ -163,9 +164,8 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
                       <Input 
                         label="Username *" 
                         placeholder="admin_entity"
-                        className="lowercase"
                         value={formData.username}
-                        onChange={e => setFormData({...formData, username: e.target.value})}
+                        onChange={e => setFormData({...formData, username: e.target.value.toLowerCase()})}
                         icon={<UserIcon size={16} className="text-slate-400" />}
                       />
                       <Input 
@@ -183,10 +183,9 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({ isOpen, onClose,
               <div className="md:col-span-2">
                 <Input 
                   label="Business Name *"
-                  className="capitalize"
                   placeholder="Enter legally registered name" 
                   value={formData.businessName}
-                  onChange={e => setFormData({...formData, businessName: e.target.value})}
+                  onChange={e => setFormData({...formData, businessName: capitalize(e.target.value)})}
                 />
               </div>
 
