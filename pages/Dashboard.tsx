@@ -1,5 +1,4 @@
-
-import React, { useMemo } from 'react';
+import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { TrendingUp, DollarSign, Users, Clock } from 'lucide-react';
 import { Card } from '../components/Card';
@@ -13,12 +12,9 @@ const data = [
   { name: 'Jun', value: 67000 },
 ];
 
-const Dashboard: React.FC = () => {
-  const currencySymbol = useMemo(() => {
-    const setting = localStorage.getItem('app_currency') || 'Dollar ($)';
-    return setting.includes('Rs') ? 'Rs.' : '$';
-  }, []);
+const currencySymbol = 'Rs.';
 
+const Dashboard: React.FC = () => {
   const stats = [
     { label: 'Total Revenue', value: `${currencySymbol}124,500`, trend: '+12%', icon: <DollarSign />, color: 'text-indigo-600 bg-indigo-50' },
     { label: 'Pending Invoices', value: '24', trend: '-2%', icon: <Clock />, color: 'text-amber-600 bg-amber-50' },

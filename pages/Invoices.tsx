@@ -68,10 +68,7 @@ const Invoices: React.FC = () => {
   const [pageInput, setPageInput] = useState('1');
   const itemsPerPage = 30;
 
-  const currencySymbol = useMemo(() => {
-    const setting = localStorage.getItem('app_currency') || 'Dollar ($)';
-    return setting.includes('Rs') ? 'Rs.' : '$';
-  }, []);
+  const currencySymbol = useMemo(() => 'Rs.', []);
 
   useEffect(() => {
     fetchInvoices(currentPage, true);

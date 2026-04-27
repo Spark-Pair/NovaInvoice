@@ -1274,15 +1274,6 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
       if (Number(item.unitPrice) < 1) return false;
       if (Number(item.salesValue) < 1) return false;
 
-      // Conditional SRO rules
-      if (item.saleType === SALE_TYPES[1]) {
-        if (!item.sroScheduleNo || item.sroScheduleNo === SRO_SCHEDULE_OPTIONS[0]) {
-          return false;
-        }
-        if (!item.sroItemSerialNo || item.sroItemSerialNo === SRO_SERIAL_OPTIONS[0]) {
-          return false;
-        }
-      }
     }
 
     return true;
@@ -1458,7 +1449,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
         <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="hidden sm:block">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Amount</p>
-            <h4 className="text-3xl font-black text-indigo-600 tracking-tighter">${totalInvoiceValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h4>
+            <h4 className="text-3xl font-black text-indigo-600 tracking-tighter">Rs.{totalInvoiceValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h4>
           </div>
           <div className="flex gap-4 w-full sm:w-auto">
             <Button variant="secondary" className="flex-1 sm:flex-none px-10 h-14 rounded-2xl" onClick={onClose}>Discard</Button>

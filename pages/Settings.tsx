@@ -1,21 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
-  Settings as SettingsIcon, Globe, Palette, Coins, Save, 
+  Settings as SettingsIcon, Palette, Save, 
   CheckCircle2, FileText, BarChart3, Users, ChevronRight,
   ClipboardList, Contact2, LayoutPanelLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Select } from '../components/Select';
 import { ConfigModal } from '@/components/settings/ConfigModal';
 import api from '@/axios';
 import Loader from '@/components/Loader';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppToast } from '@/components/toast/toast';
 import { useGlobalLoader } from '@/hooks/LoaderContext';
-
-const CURRENCY_OPTIONS = ['Dollar ($)', 'Rs (₨)'];
 
 export const SETTINGS_CONFIG = {
   invoiceFields: {
@@ -111,23 +108,52 @@ const Settings: React.FC = () => {
   const toast = useAppToast();
   const { showLoader, hideLoader } = useGlobalLoader();
 
-  const [currency, setCurrency] = useState(() => localStorage.getItem('app_currency') || 'Dollar ($)');
   const [showSuccess, setShowSuccess] = useState(false);
   const [configs, setConfigs] = useState(SETTINGS_CONFIG);
+  const [savedConfigs, setSavedConfigs] = useState(SETTINGS_CONFIG);
   const [activeConfigKey, setActiveConfigKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const getConfigChanges = (currentConfig, originalConfig) => {
+    const changes = [];
+
+    Object.entries(currentConfig || {}).forEach(([section, fields]: [string, any[]]) => {
+      const originalFields = originalConfig?.[section] || [];
+
+      fields.forEach((field) => {
+        const originalField = originalFields.find((entry) => entry.key === field.key);
+
+        if (!originalField || originalField.isVisible === field.isVisible) return;
+
+        changes.push({
+          section,
+          label: field.label,
+          isVisible: field.isVisible,
+        });
+      });
+    });
+
+    return changes;
+  };
+
+  const invoiceFormatChanges = useMemo(
+    () => getConfigChanges(configs.invoicePreview, savedConfigs.invoicePreview),
+    [configs.invoicePreview, savedConfigs.invoicePreview]
+  );
 
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
       const { data } = await api.get('/users/settings');
       if (!data) return;
-      
-      if (data.configs && Object.keys(data.configs).length > 0) {
-        setConfigs({ ...SETTINGS_CONFIG, ...data.configs });
-      } else {
-        setConfigs(SETTINGS_CONFIG);
-      }
+
+      const resolvedConfigs =
+        data.configs && Object.keys(data.configs).length > 0
+          ? { ...SETTINGS_CONFIG, ...data.configs }
+          : SETTINGS_CONFIG;
+
+      setConfigs(resolvedConfigs);
+      setSavedConfigs(resolvedConfigs);
     } catch (error) {
       console.error("Error fetching settings:", error);
     } finally {
@@ -145,6 +171,7 @@ const Settings: React.FC = () => {
       const { data } = await api.patch('/users/settings', { settings: { configs } });
 
       updateSettings({ configs });
+      setSavedConfigs(configs);
 
       toast.success("Saved settings succcessfully!");
     } catch (error) {
@@ -181,26 +208,6 @@ const Settings: React.FC = () => {
           </div>
 
           <div className="space-y-12">
-            {/* Localization Section */}
-            <section>
-              <SectionHeader icon={<Globe size={18} />} title="Localization" />
-              <Card className="p-8">
-                <div className="max-w-md flex items-center gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center shrink-0">
-                    <Coins size={24} />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Preferred Currency</p>
-                    <Select 
-                      options={CURRENCY_OPTIONS} 
-                      value={currency} 
-                      onChange={setCurrency} 
-                    />
-                  </div>
-                </div>
-              </Card>
-            </section>
-
             {/* Formats Section */}
             <section>
               <SectionHeader icon={<Palette size={18} />} title="Document Formats & Fields" />
@@ -217,6 +224,7 @@ const Settings: React.FC = () => {
                   title="Invoice Format" 
                   description="Customize layout style, company branding, and typography."
                   icon={<LayoutPanelLeft className="text-indigo-600" />}
+                  updatesCount={invoiceFormatChanges.length}
                   onClick={() => openConfigModal('invoicePreview')}
                 />
 
@@ -270,14 +278,13 @@ const Settings: React.FC = () => {
         <ConfigModal
           isOpen={!!activeConfigKey}
           config={activeConfigKey ? configs[activeConfigKey] : null}
+          originalConfig={activeConfigKey ? savedConfigs[activeConfigKey] : null}
           onClose={() => setActiveConfigKey(null)}
-          onSave={(updatedSubConfig) => {
+          onChange={(updatedSubConfig) => {
             setConfigs((prev) => ({
               ...prev,
               [activeConfigKey!]: updatedSubConfig,
             }));
-
-            setActiveConfigKey(null);
           }}
         />
       </>
@@ -295,7 +302,7 @@ const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }
   </div>
 );
 
-const FormatCard = ({ title, description, icon, onClick }: any) => (
+const FormatCard = ({ title, description, icon, onClick, updatesCount = 0 }: any) => (
   <Card 
     onClick={onClick}
     className="p-6 cursor-pointer hover:shadow-sm hover:border-indigo-500/30 transition-all duration-300 group relative overflow-hidden"
@@ -305,7 +312,14 @@ const FormatCard = ({ title, description, icon, onClick }: any) => (
         {icon}
       </div>
       <h4 className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
-        {title}
+        <span className="flex items-center gap-2">
+          {title}
+          {updatesCount > 0 && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700">
+              {updatesCount} unsaved
+            </span>
+          )}
+        </span>
         <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 transition-transform" />
       </h4>
       <p className="text-xs text-slate-500 mt-2 leading-relaxed">
