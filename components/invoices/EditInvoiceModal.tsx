@@ -1016,7 +1016,9 @@ const SRO_SERIAL_OPTIONS = [
   "Region-II"
 ]
 
-const generateId = () => crypto.randomUUID();
+// const generateId = () => crypto.randomUUID();
+const generateId = () =>
+  `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const createInitialItem = () => ({
   id: generateId(),

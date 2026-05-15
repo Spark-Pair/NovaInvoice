@@ -41,14 +41,14 @@ const ToastItem = ({ toast, onClose }: { toast: Toast; onClose: (id: string) => 
       style={{ originX: 1 }}
     >
       <span className="drop-shadow-sm">{toast.message}</span>
-      
-      <button 
+
+      <button
         onClick={() => onClose(toast.id)}
         className="ml-4 opacity-70 hover:opacity-100 transition-opacity"
       >
         ✕
       </button>
-      
+
       {/* Loading Bar */}
       <div className="absolute bottom-0 left-0 w-full h-1 bg-black/20">
         <motion.div
@@ -75,9 +75,29 @@ const ToastContext = createContext<ToastContextType | null>(null);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const show = useCallback((message: string, type: ToastType = 'info', duration = 3000) => {
-    setToasts(prev => [...prev, { id: crypto.randomUUID(), message, type, duration }]);
-  }, []);
+  // const show = useCallback((message: string, type: ToastType = 'info', duration = 3000) => {
+  //   setToasts(prev => [...prev, { id: crypto.randomUUID(), message, type, duration }]);
+  // }, []);
+  const generateId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const show = useCallback(
+    (
+      message: string,
+      type: ToastType = 'info',
+      duration = 3000
+    ) => {
+      setToasts(prev => [
+        ...prev,
+        {
+          id: generateId(),
+          message,
+          type,
+          duration,
+        },
+      ]);
+    },
+    []
+  );
 
   const remove = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
@@ -86,7 +106,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ show }}>
       {children}
-      
+
       {/* Top-Right Container */}
       <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-4 pointer-events-none">
         <AnimatePresence mode="popLayout">
