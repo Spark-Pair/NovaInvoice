@@ -22,6 +22,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { Modal } from '../components/Modal';
 import { EmptyState } from '../components/EmptyState';
 import { CreateInvoiceModal } from '../components/invoices/CreateInvoiceModal';
 import { BulkUploadModal } from '../components/invoices/BulkUploadModal';
@@ -56,6 +57,10 @@ const Invoices: React.FC = () => {
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isFbrModalOpen, setIsFbrModalOpen] = useState(false);
+  const [fbrAction, setFbrAction] = useState<'validate' | 'submit'>('validate');
+  const [fbrEnvironment, setFbrEnvironment] = useState<'sandbox' | 'production'>('sandbox');
+  const [fbrScenarioId, setFbrScenarioId] = useState('SN001');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [activeContextMenu, setActiveContextMenu] = useState<string | null>(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
@@ -116,6 +121,9 @@ const Invoices: React.FC = () => {
         relatedEntity: invoice.relatedEntity,
         items: invoice.items,
         isSent: invoice.isSent,
+        fbrStatus: invoice.fbrStatus,
+        fbrEnvironment: invoice.fbrEnvironment,
+        fbrInvoiceNumber: invoice.fbrInvoiceNumber,
         totalValue: invoice.totalValue
       }));
       
@@ -195,6 +203,37 @@ const Invoices: React.FC = () => {
 
     setIsConfirmationOpen(true);
   }
+
+  const openFbrModal = (invoice, action: 'validate' | 'submit') => {
+    setSelectedInvoice(invoice);
+    setFbrAction(action);
+    setFbrEnvironment(action === 'submit' ? 'production' : 'sandbox');
+    setFbrScenarioId('SN001');
+    setIsFbrModalOpen(true);
+  };
+
+  const handleFbrRequest = async () => {
+    if (!selectedInvoice) return;
+
+    showLoader();
+    try {
+      const { data } = await api.post(`/fbr/invoices/${selectedInvoice.id}/${fbrAction}`, {
+        environment: fbrEnvironment,
+        scenarioId: fbrEnvironment === 'sandbox' ? fbrScenarioId : undefined,
+      });
+
+      toast[data.valid ? 'success' : 'error'](data.message);
+      setIsFbrModalOpen(false);
+      setSelectedInvoice(null);
+      fetchInvoices(currentPage, true);
+    } catch (error) {
+      console.error('FBR request failed', error);
+      const responseMessage = error.response?.data?.fbrResponse?.validationResponse?.error;
+      toast.error(responseMessage || error.response?.data?.message || error.message || 'FBR request failed');
+    } finally {
+      hideLoader();
+    }
+  };
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
@@ -560,9 +599,14 @@ const Invoices: React.FC = () => {
                                 <button onClick={() => {setSelectedInvoice(inv); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                   <Edit2 size={14} /> Edit Invoice
                                 </button>
-                                <button onClick={() => {setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                                  <Send size={14} /> Send to FBR
+                                <button onClick={() => {openFbrModal(inv, 'validate'); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                                  <Send size={14} /> Validate with FBR
                                 </button>
+                                {!inv.isSent && (
+                                  <button onClick={() => {openFbrModal(inv, 'submit'); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                                    <Send size={14} /> Submit to FBR
+                                  </button>
+                                )}
                                 
                                 {!inv.isSent && (
                                 <>
@@ -649,7 +693,62 @@ const Invoices: React.FC = () => {
         type={confirmationConfig.type}
       />
 
-      {selectedInvoice && !isEditModalOpen && (
+      <Modal
+        isOpen={isFbrModalOpen && !!selectedInvoice}
+        onClose={() => setIsFbrModalOpen(false)}
+        title={fbrAction === 'validate' ? 'Validate with FBR' : 'Submit to FBR'}
+        size="lg"
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 p-4">
+            <p className="text-xs font-black uppercase tracking-widest text-slate-400">Invoice</p>
+            <p className="text-lg font-black text-slate-900 dark:text-white mt-1">{selectedInvoice?.invoiceNumber}</p>
+            <p className="text-sm text-slate-500 mt-1">{selectedInvoice?.buyer?.buyerName}</p>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-slate-500 ml-1">Environment</label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {(['sandbox', 'production'] as const).map((environment) => (
+                <button
+                  key={environment}
+                  onClick={() => setFbrEnvironment(environment)}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-bold capitalize border transition-colors ${
+                    fbrEnvironment === environment
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  {environment === 'sandbox' ? 'Sandbox (Testing)' : 'Production (Live)'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {fbrEnvironment === 'sandbox' && (
+            <div>
+              <label className="text-sm font-semibold text-slate-500 ml-1">Scenario ID</label>
+              <input
+                value={fbrScenarioId}
+                onChange={(event) => setFbrScenarioId(event.target.value)}
+                className="mt-1.5 w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all duration-200"
+                placeholder="SN001"
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setIsFbrModalOpen(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button onClick={handleFbrRequest} icon={<Send size={16} />} className="rounded-xl">
+              {fbrAction === 'validate' ? 'Validate' : 'Submit'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {selectedInvoice && !isEditModalOpen && !isFbrModalOpen && (
         <InvoicePreview
           invoice={selectedInvoice}
           onClose={() => setSelectedInvoice(null)}

@@ -2,17 +2,27 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { 
   Settings as SettingsIcon, Palette, Save, 
   CheckCircle2, FileText, BarChart3, Users, ChevronRight,
-  ClipboardList, Contact2, LayoutPanelLeft
+  ClipboardList, Contact2, LayoutPanelLeft, KeyRound, Plus, Server, ShieldCheck, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { Modal } from '../components/Modal';
 import { ConfigModal } from '@/components/settings/ConfigModal';
 import api from '@/axios';
 import Loader from '@/components/Loader';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppToast } from '@/components/toast/toast';
 import { useGlobalLoader } from '@/hooks/LoaderContext';
+
+type FbrEnvironment = 'sandbox' | 'production';
+
+type FbrApiKey = {
+  id: string;
+  environment: FbrEnvironment;
+  maskedKey: string;
+  expiryDate: string;
+};
 
 export const SETTINGS_CONFIG = {
   invoiceFields: {
@@ -104,7 +114,7 @@ export const SETTINGS_CONFIG = {
 };
 
 const Settings: React.FC = () => {
-  const { updateSettings } = useAuth();
+  const { updateSettings, usingEntity } = useAuth();
   const toast = useAppToast();
   const { showLoader, hideLoader } = useGlobalLoader();
 
@@ -113,6 +123,20 @@ const Settings: React.FC = () => {
   const [savedConfigs, setSavedConfigs] = useState(SETTINGS_CONFIG);
   const [activeConfigKey, setActiveConfigKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [fbrEntity, setFbrEntity] = useState<any>(null);
+  const [fbrApiKeys, setFbrApiKeys] = useState<FbrApiKey[]>([]);
+  const [isFbrFormOpen, setIsFbrFormOpen] = useState(false);
+  const [fbrForm, setFbrForm] = useState({
+    environment: 'sandbox' as FbrEnvironment,
+    apiKey: '',
+    expiryDate: '',
+  });
+
+  const defaultExpiryDate = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() + 5);
+    return date.toISOString().slice(0, 10);
+  };
 
   const getConfigChanges = (currentConfig, originalConfig) => {
     const changes = [];
@@ -144,7 +168,10 @@ const Settings: React.FC = () => {
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
-      const { data } = await api.get('/users/settings');
+      const [{ data }, fbrResponse] = await Promise.all([
+        api.get('/users/settings'),
+        api.get('/fbr/settings'),
+      ]);
       if (!data) return;
 
       const resolvedConfigs =
@@ -154,6 +181,8 @@ const Settings: React.FC = () => {
 
       setConfigs(resolvedConfigs);
       setSavedConfigs(resolvedConfigs);
+      setFbrEntity(fbrResponse.data.entity);
+      setFbrApiKeys(fbrResponse.data.apiKeys || []);
     } catch (error) {
       console.error("Error fetching settings:", error);
     } finally {
@@ -186,6 +215,49 @@ const Settings: React.FC = () => {
     setActiveConfigKey(configType);
   };
 
+  const openFbrForm = (environment: FbrEnvironment = 'sandbox') => {
+    setFbrForm({
+      environment,
+      apiKey: '',
+      expiryDate: defaultExpiryDate(),
+    });
+    setIsFbrFormOpen(true);
+  };
+
+  const saveFbrKey = async () => {
+    if (!fbrForm.apiKey.trim()) {
+      toast.error('FBR API key is required');
+      return;
+    }
+
+    showLoader();
+    try {
+      const { data } = await api.put('/fbr/settings/keys', fbrForm);
+      setFbrApiKeys(data.apiKeys || []);
+      setIsFbrFormOpen(false);
+      toast.success('FBR API key saved successfully!');
+    } catch (error) {
+      console.error('Failed to save FBR key', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to save FBR key');
+    } finally {
+      hideLoader();
+    }
+  };
+
+  const deleteFbrKey = async (environment: FbrEnvironment) => {
+    showLoader();
+    try {
+      const { data } = await api.delete(`/fbr/settings/keys/${environment}`);
+      setFbrApiKeys(data.apiKeys || []);
+      toast.success('FBR API key removed successfully!');
+    } catch (error) {
+      console.error('Failed to remove FBR key', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to remove FBR key');
+    } finally {
+      hideLoader();
+    }
+  };
+
   return (
     <>
       { isLoading ? (
@@ -208,6 +280,71 @@ const Settings: React.FC = () => {
           </div>
 
           <div className="space-y-12">
+            <section>
+              <SectionHeader icon={<ShieldCheck size={18} />} title="FBR Settings" />
+              <Card className="p-0 overflow-hidden">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">FBR API Keys for {fbrEntity?.businessName || usingEntity?.businessName || 'Selected Entity'}</h3>
+                    <p className="text-sm text-slate-500 mt-1">Manage sandbox and production API keys for this client.</p>
+                  </div>
+                  <Button onClick={() => openFbrForm()} icon={<Plus size={18} />} className="h-11 rounded-xl">
+                    Add API Key
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-0">
+                  <div className="p-6 border-b lg:border-b-0 lg:border-r border-slate-100 dark:border-slate-800">
+                    <h4 className="font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                      <KeyRound size={18} className="text-indigo-600" />
+                      How to Get FBR API Keys
+                    </h4>
+                    <div className="space-y-3 text-sm text-slate-500 leading-relaxed">
+                      <p>1. Contact FBR / PRAL to register for Digital Invoicing.</p>
+                      <p>2. Request API keys for Sandbox testing and Production live usage.</p>
+                      <p>3. Keys use Bearer token authentication and are typically valid for 5 years.</p>
+                      <p>4. Validate invoices in Sandbox before submitting in Production.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    {fbrApiKeys.length === 0 ? (
+                      <div className="py-10 flex flex-col items-center justify-center text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                        <Server className="text-slate-300 mb-3" size={34} />
+                        <p className="font-black text-slate-700 dark:text-slate-200">No API Keys</p>
+                        <p className="text-sm text-slate-500 mt-1">Add your FBR keys to start validating and submitting invoices.</p>
+                        <Button onClick={() => openFbrForm()} icon={<Plus size={16} />} className="mt-5 rounded-xl">
+                          Add Your First API Key
+                        </Button>
+                      </div>
+                    ) : (
+                      fbrApiKeys.map((key) => (
+                        <div key={key.environment} className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`h-2.5 w-2.5 rounded-full ${key.environment === 'production' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                              <p className="font-black capitalize">{key.environment}</p>
+                            </div>
+                            <p className="text-xs font-mono text-slate-500 mt-1 truncate">{key.maskedKey}</p>
+                            <p className="text-xs text-slate-400 mt-1">Expires {new Date(key.expiryDate).toISOString().slice(0, 10)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="secondary" onClick={() => openFbrForm(key.environment)} className="h-10 rounded-xl px-3">
+                              Replace
+                            </Button>
+                            <button onClick={() => deleteFbrKey(key.environment)} className="h-10 w-10 inline-flex items-center justify-center rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+
+                  </div>
+                </div>
+              </Card>
+            </section>
+
             {/* Formats Section */}
             <section>
               <SectionHeader icon={<Palette size={18} />} title="Document Formats & Fields" />
@@ -287,6 +424,65 @@ const Settings: React.FC = () => {
             }));
           }}
         />
+
+        <Modal
+          isOpen={isFbrFormOpen}
+          onClose={() => setIsFbrFormOpen(false)}
+          title="Add FBR API Key"
+          size="lg"
+        >
+          <div className="space-y-5">
+            <div>
+              <label className="text-sm font-semibold text-slate-500 ml-1">Environment</label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {(['sandbox', 'production'] as FbrEnvironment[]).map((environment) => (
+                  <button
+                    key={environment}
+                    onClick={() => setFbrForm((prev) => ({ ...prev, environment }))}
+                    className={`px-4 py-2.5 rounded-xl text-sm font-bold capitalize border transition-colors ${
+                      fbrForm.environment === environment
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {environment === 'sandbox' ? 'Sandbox (Testing)' : 'Production (Live)'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">Each client can have one sandbox and one production key.</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-slate-500 ml-1">API Key *</label>
+              <textarea
+                value={fbrForm.apiKey}
+                onChange={(event) => setFbrForm((prev) => ({ ...prev, apiKey: event.target.value }))}
+                placeholder="Paste your FBR API key here..."
+                className="mt-1.5 w-full min-h-32 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all duration-200 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-slate-500 ml-1">Expiry Date</label>
+              <input
+                type="date"
+                value={fbrForm.expiryDate}
+                onChange={(event) => setFbrForm((prev) => ({ ...prev, expiryDate: event.target.value }))}
+                className="mt-1.5 w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all duration-200"
+              />
+              <p className="text-xs text-slate-500 mt-2">Automatically set to 5 years from today.</p>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="ghost" onClick={() => setIsFbrFormOpen(false)} className="rounded-xl">
+                Cancel
+              </Button>
+              <Button onClick={saveFbrKey} icon={<KeyRound size={16} />} className="rounded-xl">
+                Add Key
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </>
       )}
     </>
