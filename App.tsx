@@ -15,6 +15,7 @@ import Buyers from './pages/Buyers';
 import Invoices from './pages/Invoices';
 import Settings from './pages/Settings';
 import NotAuthorized from './pages/NotAuthorized';
+import Admins from './pages/Admins';
 
 export default function App() {
   const { user, login, logout, isAuthorized, setUsingEntity } = useAuth();
@@ -53,17 +54,18 @@ export default function App() {
                     <main className="flex-1 ml-72 min-h-screen">
                       <div className={`p-8 pb-5 h-screen`}>
                         <Routes>
-                          <Route path="/admin-dashboard" element={ isAuthorized({ roles: 'admin' }) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/admin-dashboard" element={ isAuthorized({ roles: ['dev', 'admin'] }) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
                           <Route path="/dashboard" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Dashboard /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="/entities" element={ isAuthorized({ roles: 'admin' }) ? <Entities /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/entities" element={ isAuthorized({ roles: ['dev', 'admin'] }) ? <Entities /> : <Navigate to="/not-authorized" /> } />
+                          <Route path="/admins" element={ isAuthorized({ roles: 'dev' }) ? <Admins /> : <Navigate to="/not-authorized" /> } />
 
                           <Route path="/buyers" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Buyers /> : <Navigate to="/not-authorized" /> } />
                           <Route path="/invoices" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Invoices /> : <Navigate to="/not-authorized" /> } />
 
                           <Route path="/settings" element={ isAuthorized({ roles: ['client'], allowAdminWithEntity: true }) ? <Settings /> : <Navigate to="/not-authorized" /> } />
 
-                          <Route path="*" element={ <Navigate to={ isAuthorized({ roles: 'admin' }) ? "/admin-dashboard" : isAuthorized({ roles: 'client' }) ? "/dashboard" : "" } /> } />
+                          <Route path="*" element={ <Navigate to={ isAuthorized({ roles: ['dev', 'admin'] }) ? "/admin-dashboard" : isAuthorized({ roles: 'client' }) ? "/dashboard" : "" } /> } />
                         </Routes>
                       </div>
                     </main>

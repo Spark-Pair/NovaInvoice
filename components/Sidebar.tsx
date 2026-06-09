@@ -15,8 +15,8 @@ import {
   Moon, 
   Zap, 
   FileText,
-  User as UserIcon,
-  ChevronUp
+  ChevronUp,
+  UserCog
 } from 'lucide-react';
 import { User, Theme } from '../types';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 interface SidebarProps {
   user: User;
   onLogout: () => void;
+  onDeselectEntity: () => void;
   theme: Theme;
   toggleTheme: () => void;
 }
@@ -39,10 +40,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, onDeselectEntity, th
   const entityDropdownRef = useRef<HTMLDivElement>(null);
 
   const menuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin-dashboard', show: isAuthorized({ roles: 'admin' }) },
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin-dashboard', show: isAuthorized({ roles: ['dev', 'admin'] }) },
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard', show: isAuthorized({ roles: 'client' }) },
     
-    { icon: <Building2 size={20} />, label: 'Entities', path: '/entities', show: isAuthorized({ roles: 'admin' }) },
+    { icon: <UserCog size={20} />, label: 'Admins', path: '/admins', show: isAuthorized({ roles: 'dev' }) },
+    { icon: <Building2 size={20} />, label: 'Entities', path: '/entities', show: isAuthorized({ roles: ['dev', 'admin'] }) },
 
     { icon: <Users size={20} />, label: 'Buyers', path: '/buyers', show: isAuthorized({ roles: 'client' }) },
     { icon: <FileText size={20} />, label: 'Invoices', path: '/invoices', show: isAuthorized({ roles: 'client' }) },

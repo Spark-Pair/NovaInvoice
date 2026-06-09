@@ -525,8 +525,8 @@ const Entities: React.FC = () => {
         isOpen={isResetPasswordModalOpen}
         onClose={() => setIsResetPasswordModalOpen(false)}
         onReset={handleResetPassword}
-        entityName={selectedEntity?.businessName || ''}
-        entityId={selectedEntity?.id || ''}
+        subjectName={selectedEntity?.businessName || ''}
+        subjectId={selectedEntity?.id || ''}
       />
 
       <EntityFilterModal

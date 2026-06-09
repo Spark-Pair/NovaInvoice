@@ -3,13 +3,18 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import api from '@/axios';
 import { User } from '../types';
 
+type AuthCheckOptions = {
+    roles?: string | string[];
+    allowAdminWithEntity?: boolean;
+};
+
 type AuthContextType = {
     user: User | null;
     usingEntity: any;
     login: (u: User) => void;
     logout: () => Promise<void>;
     updateSettings: (s: any) => void;
-    isAuthorized: (roles?: string[]) => boolean;
+    isAuthorized: (options?: AuthCheckOptions) => boolean;
     setUsingEntity: (e: any) => void;
 };
 
@@ -49,22 +54,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('user', JSON.stringify(updated));
     };
 
-    type AuthCheckOptions = {
-    roles?: string[];
-    allowAdminWithEntity?: boolean;
-    };
-
     const isAuthorized = useCallback(
     ({ roles = [], allowAdminWithEntity = false }: AuthCheckOptions = {}) => {
         if (!user) return false;
 
+        const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
         // Normal role check
-        if (roles.includes(user.role)) return true;
+        if (allowedRoles.includes(user.role)) return true;
 
         // Special case: admin acting as client
         if (
         allowAdminWithEntity &&
-        user.role === 'admin' &&
+        (user.role === 'admin' || user.role === 'dev') &&
         usingEntity
         ) {
         return true;
