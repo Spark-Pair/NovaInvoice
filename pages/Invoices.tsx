@@ -532,7 +532,6 @@ const Invoices: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                  {console.log(invoices)}
                   {invoices.map(inv => {
                     const b = buyers.find(x => x.id === inv.buyerId);
                     return (
