@@ -226,10 +226,20 @@ const Invoices: React.FC = () => {
       setIsFbrModalOpen(false);
       setSelectedInvoice(null);
       fetchInvoices(currentPage, true);
-    } catch (error) {
-      console.error('FBR request failed', error);
-      const responseMessage = error.response?.data?.fbrResponse?.validationResponse?.error;
-      toast.error(responseMessage || error.response?.data?.message || error.message || 'FBR request failed');
+    } catch (error: any) {
+      const responseData = error.response?.data;
+      console.error('FBR request failed', {
+        status: error.response?.status,
+        data: responseData,
+        message: error.message,
+      });
+      const responseMessage =
+        responseData?.fbrResponse?.validationResponse?.error ||
+        responseData?.fbrResponse?.message ||
+        responseData?.fbrResponse?.error ||
+        responseData?.fbrResponse?.raw ||
+        responseData?.message;
+      toast.error(responseMessage || error.message || 'FBR request failed');
     } finally {
       hideLoader();
     }
