@@ -228,12 +228,19 @@ const Invoices: React.FC = () => {
       fetchInvoices(currentPage, true);
     } catch (error: any) {
       const responseData = error.response?.data;
+      const responseText =
+        typeof responseData === 'string'
+          ? responseData
+          : JSON.stringify(responseData || {}, null, 2);
       console.error('FBR request failed', {
         status: error.response?.status,
         data: responseData,
+        responseText,
         message: error.message,
       });
+      console.error(`FBR response body:\n${responseText}`);
       const responseMessage =
+        responseData?.errors?.join?.(', ') ||
         responseData?.fbrResponse?.validationResponse?.error ||
         responseData?.fbrResponse?.message ||
         responseData?.fbrResponse?.error ||
