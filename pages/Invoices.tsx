@@ -212,6 +212,23 @@ const Invoices: React.FC = () => {
     setIsFbrModalOpen(true);
   };
 
+  const getFbrResponseMessage = (responseData: any) => {
+    const validation = responseData?.fbrResponse?.validationResponse;
+    const itemErrors = validation?.invoiceStatuses
+      ?.map((item: any) => item?.error)
+      ?.filter(Boolean);
+
+    return (
+      responseData?.errors?.join?.(', ') ||
+      itemErrors?.join(', ') ||
+      validation?.error ||
+      responseData?.fbrResponse?.message ||
+      responseData?.fbrResponse?.error ||
+      responseData?.fbrResponse?.raw ||
+      responseData?.message
+    );
+  };
+
   const handleFbrRequest = async () => {
     if (!selectedInvoice) return;
 
@@ -222,9 +239,17 @@ const Invoices: React.FC = () => {
         scenarioId: fbrEnvironment === 'sandbox' ? fbrScenarioId : undefined,
       });
 
-      toast[data.valid ? 'success' : 'error'](data.message);
-      setIsFbrModalOpen(false);
-      setSelectedInvoice(null);
+      const responseText = JSON.stringify(data || {}, null, 2);
+      console.info(`FBR response body:\n${responseText}`);
+
+      if (data.valid) {
+        toast.success(data.message);
+        setIsFbrModalOpen(false);
+        setSelectedInvoice(null);
+      } else {
+        toast.error(getFbrResponseMessage(data) || data.message || 'FBR returned validation errors');
+      }
+
       fetchInvoices(currentPage, true);
     } catch (error: any) {
       const responseData = error.response?.data;
@@ -239,13 +264,7 @@ const Invoices: React.FC = () => {
         message: error.message,
       });
       console.error(`FBR response body:\n${responseText}`);
-      const responseMessage =
-        responseData?.errors?.join?.(', ') ||
-        responseData?.fbrResponse?.validationResponse?.error ||
-        responseData?.fbrResponse?.message ||
-        responseData?.fbrResponse?.error ||
-        responseData?.fbrResponse?.raw ||
-        responseData?.message;
+      const responseMessage = getFbrResponseMessage(responseData);
       toast.error(responseMessage || error.message || 'FBR request failed');
     } finally {
       hideLoader();
