@@ -1024,6 +1024,8 @@ interface CreateInvoiceModalProps {
   nextInvoiceNumber: string;
   buyers: Buyer[];
   onAddNewBuyer: () => void;
+  initialInvoice?: any;
+  title?: string;
 }
 
 // const generateId = () => crypto.randomUUID();
@@ -1087,13 +1089,15 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   onClose, 
   onAdd,
   buyers,
-  onAddNewBuyer
+  onAddNewBuyer,
+  initialInvoice,
+  title = "Create Professional Invoice"
 }) => {
   const toast = useAppToast();
   const { showLoader, hideLoader } = useGlobalLoader();
 
   const [selectedBuyer, setSelectedBuyer] = useState(null);
-  const [invoiceData, setInvoiceData] = useState({
+  const createInitialInvoiceData = () => ({
     invoiceNumber: '',
     date: new Date().toISOString().split('T')[0],
     documentType: DOCUMENT_TYPES[0],
@@ -1102,6 +1106,34 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     buyerId: '',
     items: [createInitialItem()],
   });
+
+  const createInvoiceDataFromInitial = (invoice: any) => {
+    if (!invoice) return createInitialInvoiceData();
+
+    return {
+      invoiceNumber: '',
+      date: new Date().toISOString().split('T')[0],
+      documentType: invoice.documentType || DOCUMENT_TYPES[0],
+      salesman: invoice.salesman || '',
+      referenceNumber: '',
+      buyerId: invoice.buyer?._id || invoice.buyer?.id || invoice.buyerId || '',
+      items: (invoice.items?.length ? invoice.items : [createInitialItem()]).map((item: any) => ({
+        ...createInitialItem(),
+        ...item,
+        id: generateId(),
+        _id: undefined,
+      })),
+    };
+  };
+
+  const [invoiceData, setInvoiceData] = useState(createInitialInvoiceData);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setInvoiceData(createInvoiceDataFromInitial(initialInvoice));
+    setSelectedBuyer(null);
+  }, [isOpen, initialInvoice]);
 
   useEffect(() => {
     if (!invoiceData.buyerId) return;
@@ -1283,7 +1315,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
   return (
     <>
-      <Modal size="5xl" isOpen={isOpen} onClose={onClose} title="Create Professional Invoice">
+      <Modal size="5xl" isOpen={isOpen} onClose={onClose} title={title}>
         <div className="space-y-8 h-[80vh] overflow-y-auto pr-4 custom-scrollbar scroll-smooth">
           
           {/* Section 1: Basic Info */}
@@ -1296,7 +1328,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <Input label="Invoice Number *" placeholder="Invoice Number" value={invoiceData.invoiceNumber} onChange={e => setInvoiceData({...invoiceData, invoiceNumber: e.target.value})} />
-              <Input label="Invoice Date *" type="date" value={invoiceData.issueDate} onChange={e => setInvoiceData({...invoiceData, issueDate: e.target.value})} />
+              <Input label="Invoice Date *" type="date" value={invoiceData.date} onChange={e => setInvoiceData({...invoiceData, date: e.target.value})} />
               <Input label="Reference Number" placeholder="Optional" value={invoiceData.referenceNumber} onChange={e => setInvoiceData({...invoiceData, referenceNumber: e.target.value})} />
               <Input label="Salesman" placeholder="Salesman" value={invoiceData.salesman} onChange={e => setInvoiceData({...invoiceData, salesman: e.target.value})} />  
               <div className="col-span-2">

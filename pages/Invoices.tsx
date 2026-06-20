@@ -17,7 +17,8 @@ import {
   Trash2,
   Clock,
   Upload,
-  Edit2
+  Edit2,
+  Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
@@ -53,6 +54,7 @@ const Invoices: React.FC = () => {
   const [buyers, setBuyers] = useState([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [duplicateInvoice, setDuplicateInvoice] = useState<Invoice | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isBuyerModalOpen, setIsBuyerModalOpen] = useState(false);
@@ -152,6 +154,7 @@ const Invoices: React.FC = () => {
   const handleAddInvoice = (invoice) => {
     handleClearFilters();
     setIsModalOpen(false);
+    setDuplicateInvoice(null);
     setSelectedInvoice(invoice);
   };
 
@@ -210,6 +213,13 @@ const Invoices: React.FC = () => {
     setFbrEnvironment(action === 'submit' ? 'production' : 'sandbox');
     setFbrScenarioId('SN001');
     setIsFbrModalOpen(true);
+  };
+
+  const openDuplicateInvoiceModal = (invoice) => {
+    setSelectedInvoice(null);
+    setDuplicateInvoice(invoice);
+    setIsModalOpen(true);
+    setActiveContextMenu(null);
   };
 
   const getFbrResponseMessage = (responseData: any) => {
@@ -445,7 +455,7 @@ const Invoices: React.FC = () => {
             >
               Upload
             </Button>
-            <Button disabled={!buyers} onClick={() => setIsModalOpen(true)} icon={<Plus size={20} />} className="rounded-2xl shadow-xl shadow-indigo-500/10 h-12">
+                  <Button disabled={!buyers} onClick={() => { setDuplicateInvoice(null); setIsModalOpen(true); }} icon={<Plus size={20} />} className="rounded-2xl shadow-xl shadow-indigo-500/10 h-12">
               New Invoice
             </Button>
           </div>
@@ -634,6 +644,9 @@ const Invoices: React.FC = () => {
                                 <button onClick={() => {setSelectedInvoice(inv); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                   <Edit2 size={14} /> Edit Invoice
                                 </button>
+                                <button onClick={() => openDuplicateInvoiceModal(inv)} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                                  <Copy size={14} /> Duplicate Invoice
+                                </button>
                                 <button onClick={() => {openFbrModal(inv, 'validate'); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                   <Send size={14} /> Validate with FBR
                                 </button>
@@ -678,9 +691,11 @@ const Invoices: React.FC = () => {
 
       <CreateInvoiceModal 
         isOpen={isModalOpen && !isBuyerModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={() => { setIsModalOpen(false); setDuplicateInvoice(null); }} 
         onAdd={handleAddInvoice}
         buyers={buyers}
+        initialInvoice={duplicateInvoice}
+        title={duplicateInvoice ? "Duplicate Invoice" : "Create Professional Invoice"}
         onAddNewBuyer={() => {
           setIsBuyerModalOpen(true);
         }}
