@@ -580,6 +580,9 @@ const Invoices: React.FC = () => {
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                   {invoices.map(inv => {
                     const b = buyers.find(x => x.id === inv.buyerId);
+                    const isProductionSent =
+                      inv.isSent && inv.fbrEnvironment === 'production';
+
                     return (
                       <tr 
                         key={inv.id} 
@@ -641,7 +644,7 @@ const Invoices: React.FC = () => {
                                 <button onClick={() => {setSelectedInvoice(inv); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                   <Eye size={14} /> View Invoice
                                 </button>
-                                {!inv.isSent && (
+                                {!isProductionSent && (
                                   <button onClick={() => {setSelectedInvoice(inv); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                     <Edit2 size={14} /> Edit Invoice
                                   </button>
@@ -652,7 +655,7 @@ const Invoices: React.FC = () => {
                                 <button onClick={() => {openFbrModal(inv, 'validate'); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                   <Send size={14} /> Validate with FBR
                                 </button>
-                                {!inv.isSent && (
+                                {!isProductionSent && (
                                   <button onClick={() => {openFbrModal(inv, 'submit'); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                     <Send size={14} /> Submit to FBR
                                   </button>
