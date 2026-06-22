@@ -1052,6 +1052,7 @@ export const EditInvoiceModal = ({
   onUpdate,
   invoice,
   buyers,
+  fbrFieldHints,
   onAddNewBuyer
 }) => {
   const toast = useAppToast();
@@ -1060,6 +1061,24 @@ export const EditInvoiceModal = ({
   // const [buyers, setBuyers] = useState([]);
   const [selectedBuyer, setSelectedBuyer] = useState(null);
   const [invoiceData, setInvoiceData] = useState(null);
+  const highlightedItemFields = useMemo(
+    () => new Set(fbrFieldHints?.itemFields || []),
+    [fbrFieldHints]
+  );
+  const highlightedHeaderFields = useMemo(
+    () => new Set(fbrFieldHints?.headerFields || []),
+    [fbrFieldHints]
+  );
+
+  const highlightClass = (field: string) =>
+    highlightedItemFields.has(field)
+      ? 'ring-2 ring-amber-400 border-amber-400 bg-amber-50/50 dark:bg-amber-900/10'
+      : '';
+
+  const highlightSelectClass = (field: string) =>
+    highlightedItemFields.has(field)
+      ? 'rounded-xl ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+      : '';
   
   useEffect(() => {
     if (!invoice) return;
@@ -1211,6 +1230,14 @@ export const EditInvoiceModal = ({
   return (
     <Modal size="5xl" isOpen={isOpen} onClose={onClose} title={`Edit Invoice (${invoiceData?.invoiceNumber})`}>
       <div className="space-y-8 h-[80vh] overflow-y-auto pr-4 custom-scrollbar scroll-smooth">
+        {fbrFieldHints?.message && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300">
+              FBR issue to fix
+            </p>
+            <p className="mt-1 text-sm font-semibold">{fbrFieldHints.message}</p>
+          </div>
+        )}
         
         {/* Section 1: Basic Info */}
         <div className="space-y-4">
@@ -1255,6 +1282,7 @@ export const EditInvoiceModal = ({
             placeholder="Select a registered buyer..."
             options={buyers.map(b => b.buyerName)}
             value={selectedBuyer?.buyerName || ''}
+            className={highlightedHeaderFields.has('buyer') ? 'rounded-xl ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900' : ''}
             onChange={val => {
               const b = buyers.find(x => x.buyerName === val);
               setInvoiceData({...invoiceData, buyerId: b?._id || ''});
@@ -1300,7 +1328,9 @@ export const EditInvoiceModal = ({
 
           <div className="space-y-6">
             {(invoiceData?.items || []).map((item, index) => (
-              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative group">
+              <div className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border shadow-sm relative group ${
+                fbrFieldHints ? 'border-amber-200 dark:border-amber-500/30' : 'border-slate-200 dark:border-slate-800'
+              }`}>
                 <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
                   Item {index + 1}
                 </div>
@@ -1313,26 +1343,27 @@ export const EditInvoiceModal = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
                   <div className="md:col-span-1">
-                    <Input label="HS Code *" placeholder="0101.1100" value={item.hsCode} onChange={e => updateItem(item.id, { hsCode: e.target.value })} />
+                    <Input label="HS Code *" placeholder="0101.1100" value={item.hsCode} className={highlightClass('hsCode')} onChange={e => updateItem(item.id, { hsCode: e.target.value })} />
                   </div>
                   <div className="md:col-span-3">
                     <Input label="Product Description *" placeholder="Product or service details" value={item.description} onChange={e => updateItem(item.id, { description: e.target.value })} />
                   </div>
                   
                   <div className="md:col-span-2">
-                    <Select label="Sale Type *" options={SALE_TYPES} value={item.saleType} onChange={val => updateItem(item.id, { saleType: val })} />
+                    <Select label="Sale Type *" options={SALE_TYPES} value={item.saleType} className={highlightSelectClass('saleType')} onChange={val => updateItem(item.id, { saleType: val })} />
                   </div>
                   <div className="md:col-span-2">
-                    <Input label="Quantity *" type="number" step="0.01" value={item.quantity} onChange={e => updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })} />
+                    <Input label="Quantity *" type="number" step="0.01" value={item.quantity} className={highlightClass('quantity')} onChange={e => updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
-                  <Select label="UOM *" options={UOM_OPTIONS} value={item.uom} onChange={val => updateItem(item.id, { uom: val })} />
+                  <Select label="UOM *" options={UOM_OPTIONS} value={item.uom} className={highlightSelectClass('uom')} onChange={val => updateItem(item.id, { uom: val })} />
                   <Select 
                     label="Rate *" 
                     options={RATE_OPTIONS} 
                     value={item.rate} 
+                    className={highlightSelectClass('rate')}
                     onChange={val => { updateItem(item.id, { rate: val }) }} 
                   />
                   <Input label="Unit Price *" type="number" step="0.01" value={item.unitPrice} onChange={e => updateItem(item.id, { unitPrice: parseFloat(e.target.value) || 0 })} />
@@ -1344,28 +1375,28 @@ export const EditInvoiceModal = ({
                     className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500"
                     value={item.salesValue} 
                   />
-                  <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} onChange={e => updateItem(item.id, { salesTax: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Sales Tax Applicable" specialLabel="Auto-Calc/Manual" type="number" step="0.01" value={item.salesTax} className={highlightClass('salesTax')} onChange={e => updateItem(item.id, { salesTax: parseFloat(e.target.value) || 0 })} />
                   <Input label="Discount" type="number" step="0.01" value={item.discount} onChange={e => updateItem(item.id, { discount: parseFloat(e.target.value) || 0 })} />
                   
                   <Input label="Other Discount(Not sent to FBR)" type="number" step="0.01" value={item.otherDiscount} onChange={e => updateItem(item.id, { otherDiscount: parseFloat(e.target.value) || 0 })} />
                   <Input label="Sales Tax Withheld at Source" type="number" step="0.01" value={item.salesTaxWithheld} onChange={e => updateItem(item.id, { salesTaxWithheld: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} onChange={e => updateItem(item.id, { extraTax: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Extra Tax" type="number" step="0.01" value={item.extraTax} className={highlightClass('extraTax')} onChange={e => updateItem(item.id, { extraTax: parseFloat(e.target.value) || 0 })} />
                   
-                  <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} onChange={e => updateItem(item.id, { furtherTax: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} onChange={e => updateItem(item.id, { federalExciseDuty: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Further Tax" type="number" step="0.01" value={item.furtherTax} className={highlightClass('furtherTax')} onChange={e => updateItem(item.id, { furtherTax: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Federal Excise Duty Payable" type="number" step="0.01" value={item.federalExciseDuty} className={highlightClass('federalExciseDuty')} onChange={e => updateItem(item.id, { federalExciseDuty: parseFloat(e.target.value) || 0 })} />
                   <Input label="236G" type="number" step="0.01" value={item.t236g} onChange={e => updateItem(item.id, { t236g: parseFloat(e.target.value) || 0 })} />
                   
                   <Input label="236H" type="number" step="0.01" value={item.t236h} onChange={e => updateItem(item.id, { t236h: parseFloat(e.target.value) || 0 })} />
                   <Input label="Trade Discount" type="number" step="0.01" value={item.tradeDiscount} onChange={e => updateItem(item.id, { tradeDiscount: parseFloat(e.target.value) || 0 })} />
-                  <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} onChange={e => updateItem(item.id, { fixedValue: parseFloat(e.target.value) || 0 })} />
+                  <Input label="Fixed/Notified Value or Retail Price" type="number" step="0.01" value={item.fixedValue} className={highlightClass('fixedValue')} onChange={e => updateItem(item.id, { fixedValue: parseFloat(e.target.value) || 0 })} />
                   
-                  <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
-                  <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />
+                  <Select label="SRO Schedule No" options={SRO_SCHEDULE_OPTIONS} value={item.sroScheduleNo} className={highlightSelectClass('sroScheduleNo')} onChange={val => updateItem(item.id, { sroScheduleNo: val })} />
+                  <Select label="SRO Item Serial No" options={SRO_SERIAL_OPTIONS} value={item.sroItemSerialNo} className={highlightSelectClass('sroItemSerialNo')} onChange={val => updateItem(item.id, { sroItemSerialNo: val })} />
                   
                   <Input 
                     readOnly 
                     label="Total Item Value" 
-                    className="bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-600 font-bold"
+                    className={`bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-600 font-bold ${highlightClass('totalItemValue')}`}
                     value={item.totalItemValue.toFixed(2)} 
                   />
                 </div>

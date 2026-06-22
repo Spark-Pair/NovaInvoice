@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { BlobProvider, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { Download, Printer, Send, X, Zap, MapPin, Building2, User as UserIcon, Hash, Calendar, CreditCard } from 'lucide-react';
@@ -255,8 +255,15 @@ const InvoiceDocument = ({invoice, previewConfigs}) => {
 export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, onClose }) => {
   const { user } = useAuth();
   const previewConfigs = user.settings?.configs?.invoicePreview || {};
-  console.log(previewConfigs);
-  
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
   
   return (
     <BlobProvider document={<InvoiceDocument invoice={invoice} previewConfigs={previewConfigs} />}>

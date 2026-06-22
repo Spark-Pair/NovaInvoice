@@ -64,6 +64,7 @@ const Invoices: React.FC = () => {
   const [fbrEnvironment, setFbrEnvironment] = useState<'sandbox' | 'production'>('sandbox');
   const [fbrScenarioId, setFbrScenarioId] = useState('SN001');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [fbrFieldHints, setFbrFieldHints] = useState<any>(null);
   const [activeContextMenu, setActiveContextMenu] = useState<string | null>(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState<{ title: string; message: string; onConfirm: () => void; type: 'danger' | 'warning' | 'info' }>({ title: '', message: '', onConfirm: () => {}, type: 'info' });
@@ -161,6 +162,7 @@ const Invoices: React.FC = () => {
   const handleUpdateEntity = (invoice) => {
     handleClearFilters();
     setIsEditModalOpen(false);
+    setFbrFieldHints(null);
     setSelectedInvoice(invoice);
   };
 
@@ -209,10 +211,16 @@ const Invoices: React.FC = () => {
 
   const openFbrModal = (invoice, action: 'validate' | 'submit') => {
     setSelectedInvoice(invoice);
+    setFbrFieldHints(null);
     setFbrAction(action);
     setFbrEnvironment(action === 'submit' ? 'production' : 'sandbox');
     setFbrScenarioId('SN001');
     setIsFbrModalOpen(true);
+  };
+
+  const closeFbrModal = () => {
+    setIsFbrModalOpen(false);
+    setSelectedInvoice(null);
   };
 
   const openDuplicateInvoiceModal = (invoice) => {
@@ -239,6 +247,55 @@ const Invoices: React.FC = () => {
     );
   };
 
+  const inferFbrFieldHints = (responseData: any) => {
+    const messages = [
+      ...(responseData?.errors || []),
+      responseData?.message,
+      responseData?.fbrResponse?.message,
+      responseData?.fbrResponse?.error,
+      responseData?.fbrResponse?.validationResponse?.error,
+      ...(responseData?.fbrResponse?.validationResponse?.invoiceStatuses || [])
+        .map((item: any) => item?.error),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    const itemFields = new Set<string>();
+    const headerFields = new Set<string>();
+
+    const addIf = (condition: boolean, field: string, target = itemFields) => {
+      if (condition) target.add(field);
+    };
+
+    addIf(/rate|sales type|sale type/.test(messages), 'rate');
+    addIf(/sale type|sales type/.test(messages), 'saleType');
+    addIf(/sales tax amount|sales tax applicable|salestax/.test(messages), 'salesTax');
+    addIf(/total value|totalvalues|numeric values/.test(messages), 'totalItemValue');
+    addIf(/extra ?tax|extratax/.test(messages), 'extraTax');
+    addIf(/further ?tax/.test(messages), 'furtherTax');
+    addIf(/fixed|notified|retail price/.test(messages), 'fixedValue');
+    addIf(/sro\/schedule|sro schedule|schedule no/.test(messages), 'sroScheduleNo');
+    addIf(/item sr|item serial|serial no/.test(messages), 'sroItemSerialNo');
+    addIf(/hs code/.test(messages), 'hsCode');
+    addIf(/uom|unit of measure/.test(messages), 'uom');
+    addIf(/quantity/.test(messages), 'quantity');
+    addIf(/fed|federal excise/.test(messages), 'federalExciseDuty');
+    addIf(/buyer registration|buyer ntn|buyer cnic|buyerntncnic/.test(messages), 'buyer', headerFields);
+
+    return {
+      message: getFbrResponseMessage(responseData),
+      itemFields: Array.from(itemFields),
+      headerFields: Array.from(headerFields),
+    };
+  };
+
+  const openEditForFbrFailure = (responseData: any) => {
+    setFbrFieldHints(inferFbrFieldHints(responseData));
+    setIsFbrModalOpen(false);
+    setIsEditModalOpen(true);
+  };
+
   const handleFbrRequest = async () => {
     if (!selectedInvoice) return;
 
@@ -258,6 +315,7 @@ const Invoices: React.FC = () => {
         setSelectedInvoice(null);
       } else {
         toast.error(getFbrResponseMessage(data) || data.message || 'FBR returned validation errors');
+        openEditForFbrFailure(data);
       }
 
       fetchInvoices(currentPage, true);
@@ -276,6 +334,7 @@ const Invoices: React.FC = () => {
       console.error(`FBR response body:\n${responseText}`);
       const responseMessage = getFbrResponseMessage(responseData);
       toast.error(responseMessage || error.message || 'FBR request failed');
+      openEditForFbrFailure(responseData || { message: error.message });
     } finally {
       hideLoader();
     }
@@ -645,7 +704,7 @@ const Invoices: React.FC = () => {
                                   <Eye size={14} /> View Invoice
                                 </button>
                                 {!isProductionSent && (
-                                  <button onClick={() => {setSelectedInvoice(inv); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
+                                  <button onClick={() => {setFbrFieldHints(null); setSelectedInvoice(inv); setIsEditModalOpen(true); setActiveContextMenu(null)}} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
                                     <Edit2 size={14} /> Edit Invoice
                                   </button>
                                 )}
@@ -708,10 +767,11 @@ const Invoices: React.FC = () => {
       
       <EditInvoiceModal 
         isOpen={isEditModalOpen && selectedInvoice && !isBuyerModalOpen} 
-        onClose={() => { setIsEditModalOpen(false); setSelectedInvoice(null); }} 
+        onClose={() => { setIsEditModalOpen(false); setSelectedInvoice(null); setFbrFieldHints(null); }} 
         onUpdate={handleUpdateEntity}
         invoice={selectedInvoice}
         buyers={buyers}
+        fbrFieldHints={fbrFieldHints}
         onAddNewBuyer={() => {
           setIsBuyerModalOpen(true);
         }}
@@ -750,7 +810,7 @@ const Invoices: React.FC = () => {
 
       <Modal
         isOpen={isFbrModalOpen && !!selectedInvoice}
-        onClose={() => setIsFbrModalOpen(false)}
+        onClose={closeFbrModal}
         title={fbrAction === 'validate' ? 'Validate with FBR' : 'Submit to FBR'}
         size="lg"
       >
@@ -793,7 +853,7 @@ const Invoices: React.FC = () => {
           )}
 
           <div className="flex justify-end gap-3">
-            <Button variant="ghost" onClick={() => setIsFbrModalOpen(false)} className="rounded-xl">
+            <Button variant="ghost" onClick={closeFbrModal} className="rounded-xl">
               Cancel
             </Button>
             <Button onClick={handleFbrRequest} icon={<Send size={16} />} className="rounded-xl">
