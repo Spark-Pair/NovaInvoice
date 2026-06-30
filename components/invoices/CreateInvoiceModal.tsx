@@ -1304,10 +1304,6 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
       if (Number(item.quantity) < 1) return false;
       if (!item.uom || item.uom === UOM_OPTIONS[0]) return false;
       if (!item.rate || item.rate === RATE_OPTIONS[0]) return false;
-
-      if (Number(item.unitPrice) < 1) return false;
-      if (Number(item.salesValue) < 1) return false;
-
     }
 
     return true;
