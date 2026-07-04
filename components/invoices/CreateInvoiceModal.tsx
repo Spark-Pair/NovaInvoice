@@ -1228,7 +1228,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
           rateHasPercentage &&
           ('rate' in updates || 'quantity' in updates || 'unitPrice' in updates || 'salesValue' in updates);
 
-        return calculateItem(updatedItem, shouldCalcSalesTax);
+        return calculateItem(updatedItem, shouldRecalcSalesTax);
       }),
     }));
   };

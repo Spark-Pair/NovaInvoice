@@ -1127,7 +1127,7 @@ export const EditInvoiceModal = ({
 
     const salesTax = recalcSalesTax
       ? calculateSalesTax(salesValue, extractPercent(item.rate))
-      : 0;
+      : num(item.salesTax);
 
     const totalItemValue =
       salesValue +
