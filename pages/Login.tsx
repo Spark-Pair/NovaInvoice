@@ -35,7 +35,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       onLogin(res.data);
       toast.success('Logged in successfully!');
     } catch (err: any) {
-      if (err.response?.status === 409 && err.response?.data?.code === 'ACTIVE_SESSION') {
+      if (err.response?.data?.code === 'ACTIVE_SESSION') {
         setConfirmPassword('');
         setShowActiveSessionModal(true);
       } else {
@@ -66,7 +66,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       onLogin(res.data);
       toast.success('Logged in successfully!');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      if (err.response?.data?.code === 'ACTIVE_SESSION') {
+        setError('Could not replace the old session. Please refresh and try again, or ask support to clear this session.');
+      } else {
+        setError(err.response?.data?.message || 'Login failed');
+      }
     } finally {
       setForceLoading(false);
     }
