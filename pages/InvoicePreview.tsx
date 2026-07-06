@@ -200,7 +200,7 @@ const InvoiceDocument = ({invoice, previewConfigs}) => {
         <View style={pdfStyles.table}>
           <View style={[pdfStyles.tableRow, pdfStyles.tableHeader]} fixed>
             {tableColumns.filter(col => col.show).map((col, index) => (
-              <Text key={col.key} style={[pdfStyles.column, index === 0 ? pdfStyles.firstColumn : {}]}>
+              <Text key={col.key} style={[pdfStyles.column, col.key === 'hsCode' && { flex: 1.7 }, index === 0 ? pdfStyles.firstColumn : {}]}>
                 {col.label}
               </Text>
             ))}
@@ -215,6 +215,7 @@ const InvoiceDocument = ({invoice, previewConfigs}) => {
                     key={col.key}
                     style={[
                       pdfStyles.column,
+                      col.key === 'hsCode' && { flex: 1.7 },
                       index === 0 ? pdfStyles.firstColumn : {},
                     ]}
                   >
@@ -280,7 +281,7 @@ export const InvoicePreview: React.FC<{ onClose: () => void }> = ({ invoice, onC
                   <X size={20} />
                 </button>
                 <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800" />
-                <h2 className="text-sm font-black uppercase tracking-[0.2em]">Preview: {invoice.number}</h2>
+                <h2 className="text-sm font-black uppercase tracking-[0.2em]">Preview: {invoice.invoiceNumber}</h2>
               </div>
               <div className="flex items-center gap-3">
                 <Button
